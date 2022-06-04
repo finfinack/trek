@@ -1,0 +1,30 @@
+<html>
+	<h1>{{ .device }}</h1>
+
+	<p>Received at: {{ .receivedAt }} ({{ .receivedAgo }} ago)</p>
+
+	<h2>GPS</h2>
+	{{ if .hasGPS }}
+		Location: {{ .gps.Latitude }}, {{ .gps.Longitude }}, Altitude: {{ .gps.AltRef }}
+	{{ else }}
+		No location data available.
+	{{ end }}
+
+	<h2>Sensors</h2>
+	<p>Luminosity: {{ .lum }}</p>
+	<p>Temperature: {{ .temp }}</p>
+	<p>Max Acceleration: {{ .acc }}</p>
+	<p>Battery Level: {{ .batt }}</p>
+
+	{{ if .hasAP }}
+	<h2>Access Point(s)</h2>
+		{{ range .aps }}
+			<p>- BSSID({{ .MACAddress }}), Signal({{ .SignalStrength }})</p>
+		{{ end }}
+	{{ end }}
+
+	<h2>Gateway(s)</h2>
+	{{ range .gateways }}
+		<p>- ID({{ .GatewayIDs.GatewayID }}), RSSI({{ .RSSI }}), Location({{ .Location.Latitude }}, {{ .Location.Longitude }})</p>
+	{{ end }}
+</html>

@@ -1,0 +1,29 @@
+<html>
+	<h1>Trekker</h1>
+    
+    <h2>Get latest status</h2>
+    <form action="/trek/v1/render?format=html">
+        <label for="device">Device:</label><input type="text" id="device" name="device"><br>
+        <label for="mustHaveGPS">Only show data with GPS info:</label><input type="checkbox" id="mustHaveGPS" name="mustHaveGPS" value="true"><br>
+        <input type="submit" value="Query">
+      </form>
+
+    <h2>Send command</h2>
+    <form action="/trek/v1/downlink">
+        <label for="device">Device:</label><input type="text" id="device" name="device"><br>
+        <p>Select action:</p>
+
+        <input type="radio" id="sctnormalfindmode" name="message" value="060000021E0A1E"><label for="sctnormalfindmode">Change normal timer to 10 minutes and the alive timer to 30 minutes, with enabling find mode for 30 minutes (default)</label><br>
+        <input type="radio" id="sctnormalnofindmode" name="message" value="06000002000A1E"><label for="sctnormalnofindmode">Change normal timer to 10 minutes and the alive timer to 30 minutes, without enabling find mode</label><br>
+        <input type="radio" id="sctbuzzer" name="message" value="0673F0021E0A1E"><label for="sctbuzzer">Enable buzzer alarm on device for 30 minutes</label><br> 
+
+        <input type="radio" id="gpsstarthour" name="message" value="07030F021E0A1E"><label for="gpsstarthour">Start GPS session for 60 minutes</label><br>
+        <input type="radio" id="gpsalwayson" name="message" value="120D0502CAEE0F81"><label for="gpsalwayson">Configure GPS stays always on</label><br>
+        <input type="radio" id="gpsstopfirst" name="message" value="120D0002CAEF0F81"><label for="gpsstopfirst">Configure GPS to stop after first GPS message</label><br>
+        <input type="radio" id="gpsstartonmove" name="message" value="120D0902D2EE0F81"><label for="gpsstartonmove">Configure GPS to start on moving</label><br>
+
+        <input type="radio" id="reboot" name="message" value="120102"><label for="reboot">Reboot without configuration changes	</label><br>
+
+        <input type="submit" value="Send">
+      </form>
+</html>
