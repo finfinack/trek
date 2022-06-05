@@ -27,6 +27,7 @@
           {{ else }}
             <a href="/trek/v1/render?device={{ .device }}&mustHaveGPS=true&format=html" type="button" class="btn btn-outline-secondary btn-sm">With position</a>
           {{ end }}
+          <a href="/?device={{ .device }}" type="button" class="btn btn-outline-danger btn-sm">Send commands</a>
         </div>
       </div>
 

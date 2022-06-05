@@ -24,10 +24,12 @@
       </div>
       <div class="row">
         <div class="col">
-          <form action="/trek/v1/render?format=html">
+          <form action="/trek/v1/render">
             <div class="mb-3">
               <label class="form-label" for="device">Device</label>
-              <input class="form-control" type="text" id="device" name="device"><br>
+              <input class="form-control" type="text" id="device" name="device" value="{{ .device }}"><br>
+
+              <input class="form-check-input" type="hidden" id="format" name="format" value="html">
 
               <input class="form-check-input" type="checkbox" id="mustHaveGPS" name="mustHaveGPS" value="true">
               <label class="form-check-label" for="mustHaveGPS">Only show data with GPS info</label><br>
@@ -48,7 +50,7 @@
           <form action="/trek/v1/downlink">
             <div class="mb-3">
               <label class="form-label" for="device">Device</label>
-              <input class="form-control" type="text" id="device" name="device"><br>
+              <input class="form-control" type="text" id="device" name="device" value="{{ .device }}"><br>
 
               <p>Action</p>
 

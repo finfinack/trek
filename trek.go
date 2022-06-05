@@ -105,7 +105,19 @@ type TrekServer struct {
 }
 
 func (t *TrekServer) indexHandler(c *gin.Context) {
-	c.HTML(http.StatusOK, "index.html", gin.H{})
+	type queryParameters struct {
+		Device string `form:"device"`
+	}
+
+	var parsedQueryParameters queryParameters
+	if err := c.ShouldBind(&parsedQueryParameters); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	c.HTML(http.StatusOK, "index.html", gin.H{
+		"device": parsedQueryParameters.Device,
+	})
 }
 
 func (t *TrekServer) renderHandler(c *gin.Context) {
