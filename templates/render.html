@@ -1,39 +1,115 @@
-<html>
-	<h1>{{ .device }}</h1>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Trek Locator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+  </head>
 
-	<p>Received at: {{ .receivedAt | formatTime }} ({{ .receivedAgo | formatDuration }} ago)</p>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
 
-	<h2>GPS</h2>
-	{{ if .hasGPS }}
-		Location: {{ .gps.Latitude }}, {{ .gps.Longitude }}, Altitude: {{ .gps.AltRef }}
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <h1>{{ .device }}</h1>
+        </div>
+      </div>
 
-		<p><iframe height=400 width=500 frameborder=0 scrolling=no marginheight=0 marginwidth=0
-		src="https://www.openstreetmap.org/export/embed.html?bbox={{ .gps.Longitude | bboxLonMin }}%2C{{ .gps.Latitude | bboxLatMin }}%2C{{ .gps.Longitude | bboxLonMax }}%2C{{ .gps.Latitude | bboxLatMax }}&layer=mapnik&marker={{ .gps.Latitude }}%2C{{ .gps.Longitude }}"></iframe></p>
-	{{ else }}
-		No location data available.
-	{{ end }}
+      <div class="row">
+        <div class="col">
+          Received at: {{ .receivedAt | formatTime }} ({{ .receivedAgo | formatDuration }} ago)
+        </div>
+      </div>
 
-	<h2>Sensors</h2>
-	<p>Luminosity: {{ .lum }}</p>
-	<p>Temperature: {{ .temp }}</p>
-	<p>Max Acceleration: {{ .acc }}</p>
-	<p>Battery Level: {{ .batt | battLevel }}</p>
+      <div class="row">
+        <div class="col">
+          <h2>GPS</h2>
+        </div>
+      </div>
+    {{ if .hasGPS }}
+      <div class="row">
+        <div class="col">
+          Location: {{ .gps.Latitude }}, {{ .gps.Longitude }}, Altitude: {{ .gps.AltRef }}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <iframe height=400 width=500 frameborder=0 scrolling=no marginheight=0 marginwidth=0
+                  src="https://www.openstreetmap.org/export/embed.html?bbox={{ .gps.Longitude | bboxLonMin }}%2C{{ .gps.Latitude | bboxLatMin }}%2C{{ .gps.Longitude | bboxLonMax }}%2C{{ .gps.Latitude | bboxLatMax }}&layer=mapnik&marker={{ .gps.Latitude }}%2C{{ .gps.Longitude }}"></iframe>
+        </div>
+      </div>
+    {{ else }}
+      <div class="row">
+        <div class="col">
+          No location data available.
+        </div>
+      </div>
+    {{ end }}
 
-	{{ if .hasAP }}
-	<h2>Access Point(s)</h2>
-		{{ range .aps }}
-			<p>- BSSID({{ .MACAddress }}), Signal({{ .SignalStrength }})</p>
-		{{ end }}
-	{{ end }}
+  <div class="row">
+    <div class="col">
+      <h2>Sensors</h2>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      Luminosity: {{ .lum }}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      Temperature: {{ .temp }}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      Max Acceleration: {{ .acc }}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      Battery Level: {{ .battLevel }}%
+      <div class="progress">
+        <div class="progress-bar" role="progressbar" style="width: {{ .battLevel }}%;" aria-valuenow="{{ .battLevel }}" aria-valuemin="0" aria-valuemax="100">{{ .battLevel }}%</div>
+      </div>
+    </div>
+  </div>
 
-	<h2>Gateway(s)</h2>
-	{{ range .gateways }}
-		<p>
-			<b>ID({{ .GatewayIDs.GatewayID }})</b>, RSSI({{ .RSSI }}), Location({{ .Location.Latitude }}, {{ .Location.Longitude }})
-			<p>
-				<iframe height=200 width=300 frameborder=0 scrolling=no marginheight=0 marginwidth=0
-					src="https://www.openstreetmap.org/export/embed.html?bbox={{ .Location.Longitude | bboxLonMin }}%2C{{ .Location.Latitude | bboxLatMin }}%2C{{ .Location.Longitude | bboxLonMax }}%2C{{ .Location.Latitude | bboxLatMax }}&layer=mapnik&marker={{ .Location.Latitude }}%2C{{ .Location.Longitude }}"></iframe>
-			</p>
-		</p>
-	{{ end }}
+    {{ if .hasAP }}
+      <div class="row">
+        <div class="col">
+          <h2>Access Point(s)</h2>
+        </div>
+      </div>
+      {{ range .aps }}
+      <div class="row">
+        <div class="col">
+          - BSSID({{ .MACAddress }}), Signal({{ .SignalStrength }})
+        </div>
+      </div>
+      {{ end }}
+    {{ end }}
+
+    <div class="row">
+      <div class="col">
+        <h2>Gateway(s)</h2>
+      </div>
+    </div>
+    {{ range .gateways }}
+      <div class="row">
+        <div class="col">
+          <b>ID({{ .GatewayIDs.GatewayID }})</b>, RSSI({{ .RSSI }}), Location({{ .Location.Latitude }}, {{ .Location.Longitude }})
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <iframe height=200 width=300 frameborder=0 scrolling=no marginheight=0 marginwidth=0
+            src="https://www.openstreetmap.org/export/embed.html?bbox={{ .Location.Longitude | bboxLonMin }}%2C{{ .Location.Latitude | bboxLatMin }}%2C{{ .Location.Longitude | bboxLonMax }}%2C{{ .Location.Latitude | bboxLatMax }}&layer=mapnik&marker={{ .Location.Latitude }}%2C{{ .Location.Longitude }}"></iframe>
+        </div>
+      </div>
+    {{ end }}
+    </div>
+  </body>
 </html>

@@ -177,7 +177,7 @@ func (t *TrekServer) renderHandler(c *gin.Context) {
 			"lum":         p.Luminosity,
 			"temp":        p.Temperature,
 			"acc":         p.MaxAcceleration,
-			"batt":        p.Battery,
+			"battLevel":   battLevel(p.Battery),
 			"gateways":    p.Gateways,
 			"hasAP":       hasAPs,
 			"aps":         p.AccessPoints,
@@ -386,8 +386,8 @@ func bboxLatMax(l float64) string {
 	return fmt.Sprintf("%f", l+latPadding)
 }
 
-func battLevel(b int) string {
-	return fmt.Sprintf("%.1f%%", float32(b)*100.0/battMax)
+func battLevel(b int) int {
+	return int(float32(b) * 100.0 / battMax)
 }
 
 func formatDuration(d time.Duration) string {

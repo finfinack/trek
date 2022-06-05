@@ -1,29 +1,81 @@
-<html>
-	<h1>Trekker</h1>
-    
-    <h2>Get latest status</h2>
-    <form action="/trek/v1/render?format=html">
-        <label for="device">Device:</label><input type="text" id="device" name="device"><br>
-        <label for="mustHaveGPS">Only show data with GPS info:</label><input type="checkbox" id="mustHaveGPS" name="mustHaveGPS" value="true"><br>
-        <input type="submit" value="Query">
-      </form>
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Trek Locator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+	</head>
 
-    <h2>Send command</h2>
-    <form action="/trek/v1/downlink">
-        <label for="device">Device:</label><input type="text" id="device" name="device"><br>
-        <p>Select action:</p>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
 
-        <input type="radio" id="sctnormalfindmode" name="message" value="060000021E0A1E"><label for="sctnormalfindmode">Change normal timer to 10 minutes and the alive timer to 30 minutes, with enabling find mode for 30 minutes (default)</label><br>
-        <input type="radio" id="sctnormalnofindmode" name="message" value="06000002000A1E"><label for="sctnormalnofindmode">Change normal timer to 10 minutes and the alive timer to 30 minutes, without enabling find mode</label><br>
-        <input type="radio" id="sctbuzzer" name="message" value="0673F0021E0A1E"><label for="sctbuzzer">Enable buzzer alarm on device for 30 minutes</label><br> 
+		<div class="container">
+      <div class="row">
+        <div class="col">
+          <h1>Trekker</h1>
+        </div>
+      </div>
 
-        <input type="radio" id="gpsstarthour" name="message" value="07030F021E0A1E"><label for="gpsstarthour">Start GPS session for 60 minutes</label><br>
-        <input type="radio" id="gpsalwayson" name="message" value="120D0502CAEE0F81"><label for="gpsalwayson">Configure GPS stays always on</label><br>
-        <input type="radio" id="gpsstopfirst" name="message" value="120D0002CAEF0F81"><label for="gpsstopfirst">Configure GPS to stop after first GPS message</label><br>
-        <input type="radio" id="gpsstartonmove" name="message" value="120D0902D2EE0F81"><label for="gpsstartonmove">Configure GPS to start on moving</label><br>
+      <div class="row">
+        <div class="col"> 
+          <h2>Get latest status</h2>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <form action="/trek/v1/render?format=html">
+            <div class="mb-3">
+              <label class="form-label" for="device">Device</label>
+              <input class="form-control" type="text" id="device" name="device"><br>
 
-        <input type="radio" id="reboot" name="message" value="120102"><label for="reboot">Reboot without configuration changes	</label><br>
+              <input class="form-check-input" type="checkbox" id="mustHaveGPS" name="mustHaveGPS" value="true">
+              <label class="form-check-label" for="mustHaveGPS">Only show data with GPS info</label><br>
 
-        <input type="submit" value="Send">
-      </form>
+              <input class="btn btn-primary" type="submit" value="Query">
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <h2>Send command</h2>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <form action="/trek/v1/downlink">
+            <div class="mb-3">
+              <label class="form-label" for="device">Device</label>
+              <input class="form-control" type="text" id="device" name="device"><br>
+
+              <p>Action</p>
+
+              <input class="form-check-input" type="radio" id="sctnormalfindmode" name="message" value="060000021E0A1E">
+              <label class="form-check-label" for="sctnormalfindmode">Change normal timer to 10 minutes and the alive timer to 30 minutes, with enabling find mode for 30 minutes (default)</label><br>
+              <input class="form-check-input" type="radio" id="sctnormalnofindmode" name="message" value="06000002000A1E">
+              <label class="form-check-label" for="sctnormalnofindmode">Change normal timer to 10 minutes and the alive timer to 30 minutes, without enabling find mode</label><br>
+              <input class="form-check-input" type="radio" id="sctbuzzer" name="message" value="0673F0021E0A1E">
+              <label class="form-check-label" for="sctbuzzer">Enable buzzer alarm on device for 30 minutes</label><br> 
+
+              <input class="form-check-input" type="radio" id="gpsstarthour" name="message" value="07030F021E0A1E">
+              <label class="form-check-label" for="gpsstarthour">Start GPS session for 60 minutes</label><br>
+              <input class="form-check-input" type="radio" id="gpsalwayson" name="message" value="120D0502CAEE0F81">
+              <label class="form-check-label" for="gpsalwayson">Configure GPS stays always on</label><br>
+              <input class="form-check-input" type="radio" id="gpsstopfirst" name="message" value="120D0002CAEF0F81">
+              <label class="form-check-label" for="gpsstopfirst">Configure GPS to stop after first GPS message</label><br>
+              <input class="form-check-input" type="radio" id="gpsstartonmove" name="message" value="120D0902D2EE0F81">
+              <label class="form-check-label" for="gpsstartonmove">Configure GPS to start on moving</label><br>
+
+              <input class="form-check-input" type="radio" id="reboot" name="message" value="120102">
+              <label class="form-check-label" for="reboot">Reboot without configuration changes</label><br>
+
+              <input class="btn btn-primary" type="submit" value="Send">
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
 </html>
