@@ -1,14 +1,14 @@
 <html>
 	<h1>{{ .device }}</h1>
 
-	<p>Received at: {{ .receivedAt }} ({{ .receivedAgo }} ago)</p>
+	<p>Received at: {{ .receivedAt | formatTime }} ({{ .receivedAgo | formatDuration }} ago)</p>
 
 	<h2>GPS</h2>
 	{{ if .hasGPS }}
 		Location: {{ .gps.Latitude }}, {{ .gps.Longitude }}, Altitude: {{ .gps.AltRef }}
 
 		<p><iframe height=400 width=500 frameborder=0 scrolling=no marginheight=0 marginwidth=0
-		src="https://www.openstreetmap.org/export/embed.html?bbox={{ .bbox }}&layer=mapnik&marker={{ .gps.Latitude }}%2C{{ .gps.Longitude }}"></iframe></p>
+		src="https://www.openstreetmap.org/export/embed.html?bbox={{ .gps.Longitude | bboxLonMin }}%2C{{ .gps.Latitude | bboxLatMin }}%2C{{ .gps.Longitude | bboxLonMax }}%2C{{ .gps.Latitude | bboxLatMax }}&layer=mapnik&marker={{ .gps.Latitude }}%2C{{ .gps.Longitude }}"></iframe></p>
 	{{ else }}
 		No location data available.
 	{{ end }}
@@ -17,7 +17,7 @@
 	<p>Luminosity: {{ .lum }}</p>
 	<p>Temperature: {{ .temp }}</p>
 	<p>Max Acceleration: {{ .acc }}</p>
-	<p>Battery Level: {{ .batt }}</p>
+	<p>Battery Level: {{ .batt | battLevel }}</p>
 
 	{{ if .hasAP }}
 	<h2>Access Point(s)</h2>
@@ -28,6 +28,12 @@
 
 	<h2>Gateway(s)</h2>
 	{{ range .gateways }}
-		<p>- ID({{ .GatewayIDs.GatewayID }}), RSSI({{ .RSSI }}), Location({{ .Location.Latitude }}, {{ .Location.Longitude }})</p>
+		<p>
+			<b>ID({{ .GatewayIDs.GatewayID }})</b>, RSSI({{ .RSSI }}), Location({{ .Location.Latitude }}, {{ .Location.Longitude }})
+			<p>
+				<iframe height=200 width=300 frameborder=0 scrolling=no marginheight=0 marginwidth=0
+					src="https://www.openstreetmap.org/export/embed.html?bbox={{ .Location.Longitude | bboxLonMin }}%2C{{ .Location.Latitude | bboxLatMin }}%2C{{ .Location.Longitude | bboxLonMax }}%2C{{ .Location.Latitude | bboxLatMax }}&layer=mapnik&marker={{ .Location.Latitude }}%2C{{ .Location.Longitude }}"></iframe>
+			</p>
+		</p>
 	{{ end }}
 </html>

@@ -14,6 +14,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"html/template"
+	"math"
 	"net/http"
 	"os"
 	"os/signal"
@@ -91,6 +93,8 @@ const (
 	// the zoom level. Larger padding equals zooming out further.
 	latPadding = 0.001
 	lonPadding = 0.002
+
+	battMax = 226
 )
 
 type TrekServer struct {
@@ -164,17 +168,12 @@ func (t *TrekServer) renderHandler(c *gin.Context) {
 
 	switch strings.ToLower(parsedQueryParameters.Format) {
 	case "html":
-		var bbox string
-		if hasGPS {
-			bbox = fmt.Sprintf("%f,%f,%f,%f", p.GPS.Longitude-lonPadding, p.GPS.Latitude-latPadding, p.GPS.Longitude+lonPadding, p.GPS.Latitude+latPadding)
-		}
 		c.HTML(http.StatusOK, "render.html", gin.H{
 			"device":      p.DeviceID,
-			"receivedAt":  p.ReceivedAt.Format(time.RFC3339),
-			"receivedAgo": time.Since(p.ReceivedAt).String(),
+			"receivedAt":  p.ReceivedAt,
+			"receivedAgo": time.Since(p.ReceivedAt),
 			"hasGPS":      hasGPS,
 			"gps":         p.GPS,
-			"bbox":        bbox,
 			"lum":         p.Luminosity,
 			"temp":        p.Temperature,
 			"acc":         p.MaxAcceleration,
@@ -371,6 +370,45 @@ func (i *Trek) disconnectHandler(client mqtt.Client, err error) {
 	glog.Error(err)
 }
 
+func bboxLonMin(l float64) string {
+	return fmt.Sprintf("%f", l-lonPadding)
+}
+
+func bboxLonMax(l float64) string {
+	return fmt.Sprintf("%f", l+lonPadding)
+}
+
+func bboxLatMin(l float64) string {
+	return fmt.Sprintf("%f", l-latPadding)
+}
+
+func bboxLatMax(l float64) string {
+	return fmt.Sprintf("%f", l+latPadding)
+}
+
+func battLevel(b int) string {
+	return fmt.Sprintf("%.1f%%", float32(b)*100.0/battMax)
+}
+
+func formatDuration(d time.Duration) string {
+	switch {
+	case d < time.Minute:
+		return fmt.Sprintf("%.0fs", d.Seconds())
+	case d < time.Hour:
+		return fmt.Sprintf("%.0fm", d.Minutes())
+	case d < 24*time.Hour:
+		return fmt.Sprintf("%.0fh %.0fm", d.Hours(), d.Minutes())
+	default:
+		days := math.Floor(d.Hours() / 24)
+		hours := d.Hours() - 24*days
+		return fmt.Sprintf("%.0fd %.0fh", days, hours)
+	}
+}
+
+func formatTime(t time.Time) string {
+	return t.Format(time.RFC3339)
+}
+
 func main() {
 	ctx := context.Background()
 	// Set defaults for glog flags. Can be overridden via cmdline.
@@ -419,6 +457,15 @@ func main() {
 	// Configure and run webserver.
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+	router.SetFuncMap(template.FuncMap{
+		"bboxLonMin":     bboxLonMin,
+		"bboxLonMax":     bboxLonMax,
+		"bboxLatMin":     bboxLatMin,
+		"bboxLatMax":     bboxLatMax,
+		"battLevel":      battLevel,
+		"formatDuration": formatDuration,
+		"formatTime":     formatTime,
+	})
 	router.LoadHTMLGlob("templates/*")
 	trekkerServer := TrekServer{
 		Server: &http.Server{
