@@ -7,5 +7,5 @@ import (
 )
 
 type Exporter interface {
-	Write(context.Context, <-chan *payload.Message) error
+	Write(context.Context, <-chan payload.Message) error
 }

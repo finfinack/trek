@@ -86,6 +86,11 @@ const (
 	latestDataEndTmpl = `
 		ORDER BY ReceivedAt DESC
 		LIMIT 1;`
+
+	// latPadding and lonPadding define the size of the OSM box and thus
+	// the zoom level. Larger padding equals zooming out further.
+	latPadding = 0.001
+	lonPadding = 0.002
 )
 
 type TrekServer struct {
@@ -159,12 +164,17 @@ func (t *TrekServer) renderHandler(c *gin.Context) {
 
 	switch strings.ToLower(parsedQueryParameters.Format) {
 	case "html":
+		var bbox string
+		if hasGPS {
+			bbox = fmt.Sprintf("%f,%f,%f,%f", p.GPS.Longitude-lonPadding, p.GPS.Latitude-latPadding, p.GPS.Longitude+lonPadding, p.GPS.Latitude+latPadding)
+		}
 		c.HTML(http.StatusOK, "render.html", gin.H{
 			"device":      p.DeviceID,
 			"receivedAt":  p.ReceivedAt.Format(time.RFC3339),
 			"receivedAgo": time.Since(p.ReceivedAt).String(),
 			"hasGPS":      hasGPS,
 			"gps":         p.GPS,
+			"bbox":        bbox,
 			"lum":         p.Luminosity,
 			"temp":        p.Temperature,
 			"acc":         p.MaxAcceleration,
