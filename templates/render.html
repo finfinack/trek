@@ -21,6 +21,13 @@
         <div class="col">
           Received at: {{ .receivedAt | formatTime }} ({{ .receivedAgo | formatDuration }} ago)
         </div>
+        <div class="col">
+          {{ if .hasGPS }}
+            <a href="/trek/v1/render?device={{ .device }}&mustHaveGPS=false&format=html" type="button" class="btn btn-outline-secondary btn-sm">Latest data</a>
+          {{ else }}
+            <a href="/trek/v1/render?device={{ .device }}&mustHaveGPS=true&format=html" type="button" class="btn btn-outline-secondary btn-sm">With position</a>
+          {{ end }}
+        </div>
       </div>
 
       <div class="row">
@@ -48,34 +55,33 @@
       </div>
     {{ end }}
 
-  <div class="row">
-    <div class="col">
-      <h2>Sensors</h2>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col">
-      Luminosity: {{ .lum }}
-    </div>
-  </div>
-  <div class="row">
-    <div class="col">
-      Temperature: {{ .temp }}
-    </div>
-  </div>
-  <div class="row">
-    <div class="col">
-      Max Acceleration: {{ .acc }}
-    </div>
-  </div>
-  <div class="row">
-    <div class="col">
-      Battery Level: {{ .battLevel }}%
-      <div class="progress">
-        <div class="progress-bar" role="progressbar" style="width: {{ .battLevel }}%;" aria-valuenow="{{ .battLevel }}" aria-valuemin="0" aria-valuemax="100">{{ .battLevel }}%</div>
+    <div class="row">
+      <div class="col">
+        <h2>Sensors</h2>
       </div>
     </div>
-  </div>
+
+    <div class="row">
+      <div class="col">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">
+            Luminosity: {{ .lum }}
+          </li>
+          <li class="list-group-item">
+            Temperature: {{ .temp }}
+          </li>
+          <li class="list-group-item">
+            Max Acceleration: {{ .acc }}
+          </li>
+          <li class="list-group-item">
+            Battery Level: 
+            <div class="progress">
+              <div class="progress-bar" role="progressbar" style="width: {{ .battLevel }}%;" aria-valuenow="{{ .battLevel }}" aria-valuemin="0" aria-valuemax="100">{{ .battLevel }}%</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
 
     {{ if .hasAP }}
       <div class="row">
@@ -83,13 +89,24 @@
           <h2>Access Point(s)</h2>
         </div>
       </div>
-      {{ range .aps }}
+
       <div class="row">
         <div class="col">
-          - BSSID({{ .MACAddress }}), Signal({{ .SignalStrength }})
+          <ol class="list-group list-group-numbered">
+            {{ range .aps }}
+              <li class="list-group-item d-flex justify-content-between align-items-start">
+                <div class="ms-2 me-auto">
+                  <div class="fw-bold">BSSID({{ .MACAddress }})</div>
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item">Signal({{ .SignalStrength }})</li>
+                  </ul>
+                </div>
+              </li>
+            {{ end }}
+          </ol>
         </div>
       </div>
-      {{ end }}
+
     {{ end }}
 
     <div class="row">
@@ -97,19 +114,27 @@
         <h2>Gateway(s)</h2>
       </div>
     </div>
-    {{ range .gateways }}
-      <div class="row">
-        <div class="col">
-          <b>ID({{ .GatewayIDs.GatewayID }})</b>, RSSI({{ .RSSI }}), Location({{ .Location.Latitude }}, {{ .Location.Longitude }})
-        </div>
+
+    <div class="row">
+      <div class="col">
+        <ol class="list-group list-group-numbered">
+          {{ range .gateways }}
+            <li class="list-group-item d-flex justify-content-between align-items-start">
+              <div class="ms-2 me-auto">
+                <div class="fw-bold">ID({{ .GatewayIDs.GatewayID }})</div>
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item">RSSI({{ .RSSI }})</li>
+                  <li class="list-group-item">Location({{ .Location.Latitude }}, {{ .Location.Longitude }})</li>
+                </ul>
+              </div>
+              <iframe height=200 width=300 frameborder=0 scrolling=no marginheight=0 marginwidth=0
+              src="https://www.openstreetmap.org/export/embed.html?bbox={{ .Location.Longitude | bboxLonMin }}%2C{{ .Location.Latitude | bboxLatMin }}%2C{{ .Location.Longitude | bboxLonMax }}%2C{{ .Location.Latitude | bboxLatMax }}&layer=mapnik&marker={{ .Location.Latitude }}%2C{{ .Location.Longitude }}"></iframe>  
+            </li>
+          {{ end }}
+        </ol>
       </div>
-      <div class="row">
-        <div class="col">
-          <iframe height=200 width=300 frameborder=0 scrolling=no marginheight=0 marginwidth=0
-            src="https://www.openstreetmap.org/export/embed.html?bbox={{ .Location.Longitude | bboxLonMin }}%2C{{ .Location.Latitude | bboxLatMin }}%2C{{ .Location.Longitude | bboxLonMax }}%2C{{ .Location.Latitude | bboxLatMax }}&layer=mapnik&marker={{ .Location.Latitude }}%2C{{ .Location.Longitude }}"></iframe>
-        </div>
-      </div>
-    {{ end }}
     </div>
-  </body>
+  
+  </div>
+</body>
 </html>
