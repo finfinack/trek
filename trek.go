@@ -1,8 +1,26 @@
-package main
-
 /*
-https://docs.iotracker.eu/configuration/downlink-examples/
+Trek is a simple collector and visualization for IOTracker data.
+
+The setup is as follows:
+- iotracker is configured via the iotracker console (note the parameters)
+- create an account on The Things Network (TTN)
+- create an application in TTN and add the device with the previously noted parameters
+- create an MQTT API key
+
+Based on the above, the data flows:
+- iotracker sends a message via LoRa
+- one or more LoRa gateways nearby pick the message up and relay it to TTN
+- TTN forwards it to MQTT subscribers
+- trek picks up the messages sent to MQTT and stores it in a sqlite DB
+- messages are visualized in a web UI
+- the web UI can also be used to send messages to the iotracker to reconfigure it
+
+References:
+- https://docs.iotracker.eu/devices/iot3/
+- https://docs.iotracker.eu/configuration/introduction/
+- https://www.thethingsnetwork.org/docs/applications/mqtt/quick-start/
 */
+package main
 
 import (
 	"context"
