@@ -306,9 +306,13 @@ func (t *TrekServer) downlinkHandler(c *gin.Context) {
 	case "html":
 		fallthrough
 	default:
-		params := url.Values{}
-		params.Add("device", parsedQueryParameters.Device)
-		c.Redirect(http.StatusFound, fmt.Sprintf("%s?device=%s", indexEndpoint, params.Encode()))
+		u := url.URL{
+			Path: indexEndpoint,
+		}
+		q := u.Query()
+		q.Set("device", parsedQueryParameters.Device)
+		u.RawQuery = q.Encode()
+		c.Redirect(http.StatusFound, u.String())
 	}
 }
 
