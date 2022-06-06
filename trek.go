@@ -17,6 +17,7 @@ import (
 	"html/template"
 	"math"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -265,6 +266,7 @@ func (t *TrekServer) downlinkHandler(c *gin.Context) {
 		Username string `form:"username"`
 		Device   string `form:"device"`
 		Message  string `form:"message"`
+		Format   string `form:"format"`
 	}
 
 	var parsedQueryParameters queryParameters
@@ -277,9 +279,19 @@ func (t *TrekServer) downlinkHandler(c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-	})
+
+	switch strings.ToLower(parsedQueryParameters.Format) {
+	case "json":
+		c.JSON(http.StatusOK, gin.H{
+			"status": "success",
+		})
+	case "html":
+		fallthrough
+	default:
+		params := url.Values{}
+		params.Add("device", parsedQueryParameters.Device)
+		c.Redirect(http.StatusFound, fmt.Sprintf("%s?device=%s", indexEndpoint, params.Encode()))
+	}
 }
 
 type Trek struct {
