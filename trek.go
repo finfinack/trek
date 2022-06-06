@@ -129,7 +129,8 @@ const (
 
 	// battMax is the max reading of an iotracker device with fresh batteries.
 	// This is used to calculate how full the battery currently is.
-	battMax = 226
+	battMax = 254
+	battExt = 255 // this is the value set when connected to an external power source
 )
 
 type TrekServer struct {
@@ -499,6 +500,9 @@ func bboxLatMax(l float64) string {
 }
 
 func battLevel(b int) int {
+	if b == battExt {
+		return 100
+	}
 	return int(float32(b) * 100.0 / battMax)
 }
 
