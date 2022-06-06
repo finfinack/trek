@@ -1,6 +1,6 @@
 # Trek
 
-Trek is a simple collector and visualization for IOTracker data.
+Trek is a simple collector and visualization for [IOTracker](https://www.iotracker.eu/iotracker) data.
 
 ## LoRa Setup
 
@@ -21,12 +21,18 @@ Trek is a simple collector and visualization for IOTracker data.
 ## Run it!
 
 ```
-go run trek.go -mqttUsername <MQTT_USER> -mqttPassword <MQTT_PWD> -devices <DEVICES> -sqliteFile /tmp/trek.sqlite
+go run trek.go \
+  -mqttUsername <MQTT_USER> \
+  -mqttPassword <MQTT_PWD> \
+  -devices <DEVICES> \
+  -sqliteFile /tmp/trek.sqlite
 ```
 
 Note: If you compile it and move the binary elsewhere, keep the `templates` folder next to the binary as the html templates are read from that folder at runtime.
 
 ### Flags
+
+* `mqttBroker`: MQTT Broker host to connect to. Defaults to `tls://eu1.cloud.thethings.network:8883` which connects to the EU cluster via TLS. Check [TTN Website](https://www.thethingsindustries.com/docs/getting-started/ttn/#clusters) for other available clusters. Note the custom URI handlers...
 
 * `mqttUsername`: TTN MQTT username consists of the application ID followed by the tenant ID (which should be `@ttn` in this case). This is the Username as displayed under MQTT "Connection credentials" in the application in the TTN console.
 
@@ -34,10 +40,39 @@ Note: If you compile it and move the binary elsewhere, keep the `templates` fold
 
 * `devices`: Comma separated list of iotracker device IDs you'd like to keep track of. The device ID should be as configured in TTN.
 
+* `listen`: Port the Trek webserver listens on.
+
 * `sqliteFile`: Path to the SQLite file to use. If it doesn't exist, the file will be created (but the folder must exist).
+
+### Webserver
+
+Currently the webserver exposes the following endpoints:
+
+* `/`: Index page for convenient access to the other endpoints.
+
+    The endpoint accepts the following parameters:
+
+    * `device`: Preset the device ID fields for convience.
+
+* `/trek/v1/render`: Display information for a given device.
+
+    The endpoint accepts the following parameters:
+
+    * `device`: The device ID to search and display information for.
+		* `mustHaveGPS`: Set to `1` or `true` to only display messages of the device which have a GPS position.
+	  * `format`: Accepts either `json` or `html` (default) to render the output differently.
+
+* `/trek/v1/downlink`: Sends messages to a device to reconfigure it.
+
+    The endpoint accepts the following parameters:
+
+    * `device`: The device ID to search and display information for.
+    * `message`: Message to send. This is in HEX format and needs to comply with the IOTracker [downlink message format](https://docs.iotracker.eu/configuration/downlinks/). Specifically have a look at their [examples](https://docs.iotracker.eu/configuration/downlink-examples/).
+	  * `format`: Accepts either `json` or `html` (default) to render the output differently.
 
 ## References
 
+* https://www.iotracker.eu/iotracker
 * https://docs.iotracker.eu/devices/iot3/
 * https://docs.iotracker.eu/configuration/introduction/
 * https://www.thethingsindustries.com/docs/devices/adding-devices/

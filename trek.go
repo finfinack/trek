@@ -290,10 +290,9 @@ func (t *TrekServer) renderHandler(c *gin.Context) {
 
 func (t *TrekServer) downlinkHandler(c *gin.Context) {
 	type queryParameters struct {
-		Username string `form:"username"`
-		Device   string `form:"device"`
-		Message  string `form:"message"`
-		Format   string `form:"format"`
+		Device  string `form:"device"`
+		Message string `form:"message"`
+		Format  string `form:"format"`
 	}
 
 	var parsedQueryParameters queryParameters
