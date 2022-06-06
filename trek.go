@@ -43,6 +43,7 @@ import (
 	"time"
 
 	"github.com/finfinack/trek/export"
+	"github.com/finfinack/trek/geo"
 	"github.com/finfinack/trek/payload"
 
 	// Blind import support for sqlite3 used by sqlite.go.
@@ -193,6 +194,13 @@ func (t *TrekServer) getLatestData(deviceID string, mustHaveGPS bool) (*payload.
 			glog.Warning(err)
 		} else {
 			m.HasGPS = true
+			for _, rx := range m.Gateways {
+				if rx.Location.Latitude == 0 || rx.Location.Longitude == 0 {
+					continue
+				}
+				loc := &geo.Location{Longitude: m.GPS.Longitude, Latitude: m.GPS.Latitude}
+				rx.Location.DistanceFromTracker = loc.Distance(&geo.Location{Longitude: rx.Location.Longitude, Latitude: rx.Location.Latitude})
+			}
 		}
 	}
 	if hasAPs {
@@ -515,6 +523,17 @@ func formatTime(t time.Time) string {
 	return t.Format(time.RFC3339)
 }
 
+func formatDistance(d float64) string {
+	switch {
+	case d > 10000:
+		return fmt.Sprintf("%.0fkm", d/1000)
+	case d > 1000:
+		return fmt.Sprintf("%.1fkm", d/1000)
+	default:
+		return fmt.Sprintf("%.0fm", d)
+	}
+}
+
 func main() {
 	ctx := context.Background()
 	// Set defaults for glog flags. Can be overridden via cmdline.
@@ -571,6 +590,7 @@ func main() {
 		"battLevel":      battLevel,
 		"formatDuration": formatDuration,
 		"formatTime":     formatTime,
+		"formatDistance": formatDistance,
 	})
 	router.LoadHTMLGlob("templates/*")
 	trekkerServer := TrekServer{

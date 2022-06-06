@@ -82,6 +82,9 @@ type Location struct {
 	Longitude float64 `json:"longitude"`
 	Altitude  int     `json:"altitude"`
 	Source    string  `json:"source"`
+
+	// DistanceFromTracker is a calculated field.
+	DistanceFromTracker float64 `json:"distance_from_tracker"`
 }
 
 type RXMetadata struct {
