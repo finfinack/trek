@@ -59,7 +59,9 @@ Currently the webserver exposes the following endpoints:
     The endpoint accepts the following parameters:
 
     * `device`: The device ID to search and display information for.
+
 		* `mustHaveGPS`: Set to `1` or `true` to only display messages of the device which have a GPS position.
+
 	  * `format`: Accepts either `json` or `html` (default) to render the output differently.
 
 * `/trek/v1/downlink`: Sends messages to a device to reconfigure it.
@@ -67,7 +69,9 @@ Currently the webserver exposes the following endpoints:
     The endpoint accepts the following parameters:
 
     * `device`: The device ID to search and display information for.
+
     * `message`: Message to send. This is in HEX format and needs to comply with the IOTracker [downlink message format](https://docs.iotracker.eu/configuration/downlinks/). Specifically have a look at their [examples](https://docs.iotracker.eu/configuration/downlink-examples/).
+
 	  * `format`: Accepts either `json` or `html` (default) to render the output differently.
 
 ## References
