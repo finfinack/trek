@@ -30,6 +30,11 @@
           <a href="/?device={{ .device }}" type="button" class="btn btn-outline-danger btn-sm">Send commands</a>
         </div>
       </div>
+      <div class="row">
+        <div class="col">
+          {{ .stats.TotalCount }} messages ({{ .stats.GPSCount }} with GPS data) in last {{ .stats.StatsDuration | formatDuration }} ({{ .stats.AverageMessageInterval | formatDuration }} interval).
+        </div>
+      </div>
 
       <div class="row">
         <div class="col">

@@ -22,3 +22,12 @@ type Message struct {
 	// Data
 	RAWMessage string `json:"raw_message"`
 }
+
+type Stats struct {
+	TotalCount int `json:"total_count"`
+	GPSCount   int `json:"gps_count"`
+
+	StatsDuration time.Duration `json:"stats_duration"`
+
+	AverageMessageInterval time.Duration `json:"message_interval"`
+}

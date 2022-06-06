@@ -89,11 +89,26 @@ const (
 		ORDER BY ReceivedAt DESC
 		LIMIT 1;`
 
+	statsTmpl = `SELECT
+			COUNT(CASE WHEN HasGPS THEN 1 END) AS HasGPS,
+			COUNT(*) AS Total
+		FROM
+			trek
+		WHERE
+			DeviceID = ?
+			AND ReceivedAt > ?;
+	`
+
+	// statsDuration defines over what time period statistics should be queried.
+	statsDuration = 24 * time.Hour
+
 	// latPadding and lonPadding define the size of the OSM box and thus
 	// the zoom level. Larger padding equals zooming out further.
 	latPadding = 0.001
 	lonPadding = 0.002
 
+	// battMax is the max reading of an iotracker device with fresh batteries.
+	// This is used to calculate how full the battery currently is.
 	battMax = 226
 )
 
@@ -102,6 +117,74 @@ type TrekServer struct {
 	DB       *sql.DB
 	Trek     *Trek
 	MQTTUser string
+}
+
+func (t *TrekServer) getDeviceStats(deviceID string, ago time.Duration) (*payload.Stats, error) {
+	since := time.Now().Add(-ago).UnixMilli()
+
+	statement, err := t.DB.Prepare(statsTmpl)
+	if err != nil {
+		return nil, err
+	}
+
+	var hasGPS, total int
+	if err := statement.QueryRow(deviceID, since).Scan(&hasGPS, &total); err != nil {
+		return nil, err
+	}
+
+	return &payload.Stats{
+		TotalCount:             total,
+		GPSCount:               hasGPS,
+		StatsDuration:          ago,
+		AverageMessageInterval: time.Duration(float64(time.Second) * statsDuration.Seconds() / float64(total)),
+	}, nil
+}
+
+func (t *TrekServer) getLatestData(deviceID string, mustHaveGPS bool) (*payload.Message, error) {
+	q := []string{latestDataStartTmpl}
+	if mustHaveGPS {
+		q = append(q, latestDataMustHaveGPS)
+	}
+	q = append(q, latestDataEndTmpl)
+	statement, err := t.DB.Prepare(strings.Join(q, ""))
+	if err != nil {
+		return nil, err
+	}
+
+	var hasGPS, hasAPs bool
+	var gateways, aps, gps, raw string
+	var received int64
+	var battery int
+	var temp, lum, acc float32
+	if err := statement.QueryRow(deviceID).Scan(&received, &gateways, &hasGPS, &hasAPs, &battery, &aps, &temp, &lum, &acc, &gps, &raw); err != nil {
+		return nil, err
+	}
+
+	m := &payload.Message{
+		ReceivedAt:      time.UnixMilli(received),
+		DeviceID:        deviceID,
+		Battery:         battery,
+		Temperature:     temp,
+		Luminosity:      lum,
+		MaxAcceleration: acc,
+	}
+	json.Unmarshal([]byte(gateways), &m.Gateways)
+	if hasGPS {
+		if err := json.Unmarshal([]byte(gps), &m.GPS); err != nil {
+			glog.Warning(err)
+		} else {
+			m.HasGPS = true
+		}
+	}
+	if hasAPs {
+		if err := json.Unmarshal([]byte(aps), &m.AccessPoints); err != nil {
+			glog.Warning(err)
+		} else {
+			m.HasAccessPoints = true
+		}
+	}
+
+	return m, nil
 }
 
 func (t *TrekServer) indexHandler(c *gin.Context) {
@@ -133,71 +216,46 @@ func (t *TrekServer) renderHandler(c *gin.Context) {
 		return
 	}
 
-	q := []string{latestDataStartTmpl}
-	if parsedQueryParameters.MustHaveGPS == "1" || parsedQueryParameters.MustHaveGPS == "true" {
-		q = append(q, latestDataMustHaveGPS)
-	}
-	q = append(q, latestDataEndTmpl)
-	statement, err := t.DB.Prepare(strings.Join(q, ""))
+	stats, err := t.getDeviceStats(parsedQueryParameters.Device, statsDuration)
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	var hasGPS, hasAPs bool
-	var gateways, aps, gps, raw string
-	var received int64
-	var battery int
-	var temp, lum, acc float32
-	if err := statement.QueryRow(parsedQueryParameters.Device).Scan(&received, &gateways, &hasGPS, &hasAPs, &battery, &aps, &temp, &lum, &acc, &gps, &raw); err != nil {
+	var mustHaveGPS bool
+	if parsedQueryParameters.MustHaveGPS == "1" || parsedQueryParameters.MustHaveGPS == "true" {
+		mustHaveGPS = true
+	}
+	m, err := t.getLatestData(parsedQueryParameters.Device, mustHaveGPS)
+	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	p := &payload.Message{
-		ReceivedAt:      time.UnixMilli(received),
-		DeviceID:        parsedQueryParameters.Device,
-		Battery:         battery,
-		Temperature:     temp,
-		Luminosity:      lum,
-		MaxAcceleration: acc,
-	}
-	json.Unmarshal([]byte(gateways), &p.Gateways)
-	if hasGPS {
-		if err := json.Unmarshal([]byte(gps), &p.GPS); err != nil {
-			glog.Warning(err)
-		} else {
-			p.HasGPS = true
-		}
-	}
-	if hasAPs {
-		if err := json.Unmarshal([]byte(aps), &p.AccessPoints); err != nil {
-			glog.Warning(err)
-		} else {
-			p.HasAccessPoints = true
-		}
-	}
-
 	switch strings.ToLower(parsedQueryParameters.Format) {
-	case "html":
-		c.HTML(http.StatusOK, "render.html", gin.H{
-			"device":      p.DeviceID,
-			"receivedAt":  p.ReceivedAt,
-			"receivedAgo": time.Since(p.ReceivedAt),
-			"hasGPS":      hasGPS,
-			"gps":         p.GPS,
-			"lum":         p.Luminosity,
-			"temp":        p.Temperature,
-			"acc":         p.MaxAcceleration,
-			"battLevel":   battLevel(p.Battery),
-			"gateways":    p.Gateways,
-			"hasAP":       hasAPs,
-			"aps":         p.AccessPoints,
-		})
-	default:
+	case "json":
 		c.JSON(http.StatusOK, gin.H{
 			"status": "success",
-			"data":   p,
+			"data":   m,
+			"stats":  stats,
+		})
+	case "html":
+		fallthrough
+	default:
+		c.HTML(http.StatusOK, "render.html", gin.H{
+			"device":      m.DeviceID,
+			"receivedAt":  m.ReceivedAt,
+			"receivedAgo": time.Since(m.ReceivedAt),
+			"hasGPS":      m.HasGPS,
+			"gps":         m.GPS,
+			"lum":         m.Luminosity,
+			"temp":        m.Temperature,
+			"acc":         m.MaxAcceleration,
+			"battLevel":   battLevel(m.Battery),
+			"gateways":    m.Gateways,
+			"hasAP":       m.HasAccessPoints,
+			"aps":         m.AccessPoints,
+			"stats":       stats,
 		})
 	}
 }
@@ -409,7 +467,9 @@ func formatDuration(d time.Duration) string {
 	case d < time.Hour:
 		return fmt.Sprintf("%.0fm", d.Minutes())
 	case d < 24*time.Hour:
-		return fmt.Sprintf("%.0fh %.0fm", d.Hours(), d.Minutes())
+		hours := math.Floor(d.Hours())
+		mins := d.Minutes() - 60*hours
+		return fmt.Sprintf("%.0fh %.0fm", hours, mins)
 	default:
 		days := math.Floor(d.Hours() / 24)
 		hours := d.Hours() - 24*days
