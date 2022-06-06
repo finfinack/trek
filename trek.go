@@ -84,7 +84,7 @@ const (
 	loraTimeFormat = time.RFC3339Nano // "2006-01-02T15:04:05.999999999Z"
 
 	indexEndpoint    = "/"
-	renderEndpoint   = "/trek/v1/render"
+	deviceEndpoint   = "/trek/v1/device"
 	downlinkEndpoint = "/trek/v1/downlink"
 
 	latestDataStartTmpl = `SELECT
@@ -231,7 +231,7 @@ func (t *TrekServer) indexHandler(c *gin.Context) {
 	})
 }
 
-func (t *TrekServer) renderHandler(c *gin.Context) {
+func (t *TrekServer) deviceHandler(c *gin.Context) {
 	type queryParameters struct {
 		Device      string `form:"device"`
 		MustHaveGPS string `form:"mustHaveGPS"`
@@ -270,7 +270,7 @@ func (t *TrekServer) renderHandler(c *gin.Context) {
 	case "html":
 		fallthrough
 	default:
-		c.HTML(http.StatusOK, "render.html", gin.H{
+		c.HTML(http.StatusOK, "device.html", gin.H{
 			"device":      m.DeviceID,
 			"receivedAt":  m.ReceivedAt,
 			"receivedAgo": time.Since(m.ReceivedAt),
@@ -606,7 +606,7 @@ func main() {
 		MQTTUser: *mqttUsername,
 	}
 	router.GET(indexEndpoint, trekkerServer.indexHandler)
-	router.GET(renderEndpoint, trekkerServer.renderHandler)
+	router.GET(deviceEndpoint, trekkerServer.deviceHandler)
 	router.GET(downlinkEndpoint, trekkerServer.downlinkHandler)
 	glog.Fatal(trekkerServer.Server.ListenAndServe())
 

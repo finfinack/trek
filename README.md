@@ -54,7 +54,7 @@ Currently the webserver exposes the following endpoints:
 
     * `device`: Preset the device ID fields for convience.
 
-* `/trek/v1/render`: Display information for a given device.
+* `/trek/v1/device`: Display information for a given device.
 
     The endpoint accepts the following parameters:
 
