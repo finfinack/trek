@@ -195,12 +195,12 @@ func (t *TrekServer) getLatestData(deviceID string, mustHaveGPS bool) (*payload.
 			glog.Warning(err)
 		} else {
 			m.HasGPS = true
-			for _, rx := range m.Gateways {
+			for i, rx := range m.Gateways {
 				if rx.Location.Latitude == 0 || rx.Location.Longitude == 0 {
 					continue
 				}
 				loc := &geo.Location{Longitude: m.GPS.Longitude, Latitude: m.GPS.Latitude}
-				rx.Location.DistanceFromTracker = loc.Distance(&geo.Location{Longitude: rx.Location.Longitude, Latitude: rx.Location.Latitude})
+				m.Gateways[i].Location.DistanceFromTracker = loc.Distance(&geo.Location{Longitude: rx.Location.Longitude, Latitude: rx.Location.Latitude})
 			}
 		}
 	}
