@@ -165,7 +165,7 @@ func (t *TrekServer) getDeviceStats(deviceID string, ago time.Duration) (*payloa
 	}, nil
 }
 
-func (t *TrekServer) getLatestData(deviceID string, mustHaveGPS bool) (*payload.Message, error) {
+func (t *TrekServer) getLatestData(deviceID string, mustHaveGPS bool, userLoc *geo.Location) (*payload.Message, error) {
 	q := []string{latestDataStartTmpl}
 	if mustHaveGPS {
 		q = append(q, latestDataMustHaveGPS)
@@ -194,25 +194,59 @@ func (t *TrekServer) getLatestData(deviceID string, mustHaveGPS bool) (*payload.
 		MaxAcceleration: acc,
 	}
 	json.Unmarshal([]byte(gateways), &m.Gateways)
+
+	if userLoc != nil {
+		m.HasUserLocation = true
+		m.UserLocation = payload.Location{
+			Latitude:  userLoc.Latitude,
+			Longitude: userLoc.Longitude,
+		}
+	}
+
 	if hasGPS {
 		if err := json.Unmarshal([]byte(gps), &m.GPS); err != nil {
 			glog.Warning(err)
 		} else {
 			m.HasGPS = true
-			for i, rx := range m.Gateways {
-				if rx.Location.Latitude == 0 || rx.Location.Longitude == 0 {
-					continue
-				}
-				loc := &geo.Location{Longitude: m.GPS.Longitude, Latitude: m.GPS.Latitude}
-				m.Gateways[i].Location.DistanceFromTracker = loc.Distance(&geo.Location{Longitude: rx.Location.Longitude, Latitude: rx.Location.Latitude})
-			}
 		}
 	}
+
 	if hasAPs {
 		if err := json.Unmarshal([]byte(aps), &m.AccessPoints); err != nil {
 			glog.Warning(err)
 		} else {
 			m.HasAccessPoints = true
+		}
+	}
+
+	if m.HasGPS && m.HasUserLocation {
+		m.GPS.DistanceFromUser = userLoc.Distance(&geo.Location{
+			Longitude: m.GPS.Longitude,
+			Latitude:  m.GPS.Latitude,
+		})
+	}
+
+	for i, rx := range m.Gateways {
+		if rx.Location.Latitude == 0 || rx.Location.Longitude == 0 {
+			continue
+		}
+
+		if m.HasGPS {
+			loc := &geo.Location{
+				Longitude: m.GPS.Longitude,
+				Latitude:  m.GPS.Latitude,
+			}
+			m.Gateways[i].Location.DistanceFromTracker = loc.Distance(&geo.Location{
+				Longitude: rx.Location.Longitude,
+				Latitude:  rx.Location.Latitude,
+			})
+		}
+
+		if m.HasUserLocation {
+			m.Gateways[i].Location.DistanceFromUser = userLoc.Distance(&geo.Location{
+				Longitude: rx.Location.Longitude,
+				Latitude:  rx.Location.Latitude,
+			})
 		}
 	}
 
@@ -237,9 +271,11 @@ func (t *TrekServer) indexHandler(c *gin.Context) {
 
 func (t *TrekServer) deviceHandler(c *gin.Context) {
 	type queryParameters struct {
-		Device      string `form:"device"`
-		MustHaveGPS string `form:"mustHaveGPS"`
-		Format      string `form:"format"`
+		Device      string  `form:"device"`
+		MustHaveGPS string  `form:"mustHaveGPS"`
+		Lat         float64 `form:"lat"`
+		Lon         float64 `form:"lon"`
+		Format      string  `form:"format"`
 	}
 
 	var parsedQueryParameters queryParameters
@@ -258,7 +294,14 @@ func (t *TrekServer) deviceHandler(c *gin.Context) {
 	if parsedQueryParameters.MustHaveGPS == "1" || parsedQueryParameters.MustHaveGPS == "true" {
 		mustHaveGPS = true
 	}
-	m, err := t.getLatestData(parsedQueryParameters.Device, mustHaveGPS)
+	var userLoc *geo.Location
+	if parsedQueryParameters.Lat != 0 && parsedQueryParameters.Lon != 0 {
+		userLoc = &geo.Location{
+			Latitude:  parsedQueryParameters.Lat,
+			Longitude: parsedQueryParameters.Lon,
+		}
+	}
+	m, err := t.getLatestData(parsedQueryParameters.Device, mustHaveGPS, userLoc)
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -287,6 +330,8 @@ func (t *TrekServer) deviceHandler(c *gin.Context) {
 			"gateways":    m.Gateways,
 			"hasAP":       m.HasAccessPoints,
 			"aps":         m.AccessPoints,
+			"hasUserLoc":  m.HasUserLocation,
+			"userLoc":     m.UserLocation,
 			"stats":       stats,
 		})
 	}
@@ -335,7 +380,7 @@ type Trek struct {
 }
 
 func (i *Trek) Connect(broker string, username string, password string) error {
-	if i.client.IsConnectionOpen() {
+	if i.client != nil && i.client.IsConnected() {
 		return errors.New("MQTT already connected")
 	}
 

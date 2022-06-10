@@ -52,6 +52,9 @@ type GPS struct {
 	NumSvs    int     `json:"numSvs"`
 	SOG       float32 `json:"sog"`
 	VAcc      int     `json:"vAcc"`
+
+	// Calculated fields.
+	DistanceFromUser float64 `json:"distance_from_user"`
 }
 
 type DecodedPayload struct {
@@ -83,8 +86,9 @@ type Location struct {
 	Altitude  int     `json:"altitude"`
 	Source    string  `json:"source"`
 
-	// DistanceFromTracker is a calculated field.
+	// Calculated fields.
 	DistanceFromTracker float64 `json:"distance_from_tracker"`
+	DistanceFromUser    float64 `json:"distance_from_user"`
 }
 
 type RXMetadata struct {

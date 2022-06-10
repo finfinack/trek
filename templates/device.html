@@ -30,6 +30,7 @@
           <a href="/?device={{ .device }}" type="button" class="btn btn-outline-danger btn-sm">Send commands</a>
         </div>
       </div>
+
       <div class="row">
         <div class="col">
           {{ .stats.TotalCount }} messages ({{ .stats.GPSCount }} with GPS data) in last {{ .stats.StatsDuration | formatDuration }} ({{ .stats.AverageMessageInterval | formatDuration }} interval).
@@ -41,10 +42,11 @@
           <h2>GPS</h2>
         </div>
       </div>
+
     {{ if .hasGPS }}
       <div class="row">
         <div class="col">
-          Location: {{ .gps.Latitude }}, {{ .gps.Longitude }}, Altitude: {{ .gps.AltRef }}
+          Location: {{ .gps.Latitude }}, {{ .gps.Longitude }}, Altitude: {{ .gps.AltRef }} {{ if .hasUserLoc }}({{ .gps.DistanceFromUser | formatDistance }} from you){{ end }}
         </div>
       </div>
       <div class="row">
@@ -53,6 +55,7 @@
                   src="https://www.openstreetmap.org/export/embed.html?bbox={{ .gps.Longitude | bboxLonMin }}%2C{{ .gps.Latitude | bboxLatMin }}%2C{{ .gps.Longitude | bboxLonMax }}%2C{{ .gps.Latitude | bboxLatMax }}&layer=mapnik&marker={{ .gps.Latitude }}%2C{{ .gps.Longitude }}"></iframe>
         </div>
       </div>
+
     {{ else }}
       <div class="row">
         <div class="col">
@@ -133,6 +136,9 @@
                   <li class="list-group-item">Location({{ .Location.Latitude }}, {{ .Location.Longitude }})</li>
                   {{ if $.hasGPS }}
                     <li class="list-group-item">Distance from tracker: {{ .Location.DistanceFromTracker | formatDistance }}</li>
+                  {{ end }}
+                  {{ if $.hasUserLoc }}
+                    <li class="list-group-item">Distance from you: {{ .Location.DistanceFromUser | formatDistance }}</li>
                   {{ end }}
                 </ul>
               </div>

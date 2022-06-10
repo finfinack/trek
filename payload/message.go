@@ -21,6 +21,10 @@ type Message struct {
 
 	// Data
 	RAWMessage string `json:"raw_message"`
+
+	// Downstream data (i.e. not in DB)
+	HasUserLocation bool     `json:"has_user_location"`
+	UserLocation    Location `json:"user_location"`
 }
 
 type Stats struct {
