@@ -335,8 +335,8 @@ type Trek struct {
 }
 
 func (i *Trek) Connect(broker string, username string, password string) error {
-	if i.client != nil {
-		return errors.New("already connected")
+	if i.client.IsConnectionOpen() {
+		return errors.New("MQTT already connected")
 	}
 
 	opts := mqtt.NewClientOptions()
@@ -347,10 +347,14 @@ func (i *Trek) Connect(broker string, username string, password string) error {
 	opts.SetClientID("trekker")
 	opts.SetUsername(username)
 	opts.SetPassword(password)
+	opts.SetCleanSession(true)
+	opts.SetAutoReconnect(true)
+	opts.SetConnectRetry(true)
+	opts.SetOrderMatters(false)
 
 	opts.SetDefaultPublishHandler(i.messagePubHandler)
-	opts.OnConnect = i.connectHandler
-	opts.OnConnectionLost = i.disconnectHandler
+	opts.SetOnConnectHandler(i.connectHandler)
+	opts.SetConnectionLostHandler(i.disconnectHandler)
 
 	i.client = mqtt.NewClient(opts)
 	token := i.client.Connect()
@@ -479,11 +483,11 @@ func (i *Trek) messagePubHandler(client mqtt.Client, msg mqtt.Message) {
 }
 
 func (i *Trek) connectHandler(client mqtt.Client) {
-	glog.Info("connected")
+	glog.Info("MQTT connected")
 }
 
 func (i *Trek) disconnectHandler(client mqtt.Client, err error) {
-	glog.Error(err)
+	glog.Errorf("MQTT connection lost: %s", err)
 }
 
 func bboxLonMin(l float64) string {
