@@ -153,11 +153,15 @@ func (t *TrekServer) getDeviceStats(deviceID string, ago time.Duration) (*payloa
 		return nil, err
 	}
 
+	var avg time.Duration
+	if total > 0 {
+		avg = time.Duration(float64(time.Second) * statsDuration.Seconds() / float64(total))
+	}
 	return &payload.Stats{
 		TotalCount:             total,
 		GPSCount:               hasGPS,
 		StatsDuration:          ago,
-		AverageMessageInterval: time.Duration(float64(time.Second) * statsDuration.Seconds() / float64(total)),
+		AverageMessageInterval: avg,
 	}, nil
 }
 
