@@ -86,7 +86,7 @@
             const trackermap = L.map('map-tracker').setView([{{ .gps.Latitude }}, {{ .gps.Longitude }}], 14);
           
             var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              maxZoom: 18,
+              maxZoom: 19,
               attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             }).addTo(trackermap);
           
@@ -205,7 +205,7 @@
                 var gwmap = L.map('map-{{ .GatewayIDs.GatewayID }}').setView([{{ .Location.Latitude }}, {{ .Location.Longitude }}], 14);
               
                 var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                  maxZoom: 16,
+                  maxZoom: 19,
                   attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 }).addTo(gwmap);
               
