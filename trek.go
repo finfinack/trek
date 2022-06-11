@@ -60,7 +60,10 @@ var (
 	mqttPassword = flag.String("mqttPassword", "", "MQTT Password / API Key.")
 	devices      = flag.String("devices", "", "Comma separated list of Device IDs.")
 
-	listen     = flag.String("listen", ":8080", "Listening port for webserver.")
+	port    = flag.Int("port", 8080, "Listening port for webserver.")
+	tlsCert = flag.String("tlsCert", "", "Path to TLS Certificate. If this and -tlsKey is specified, service runs as TLS server.")
+	tlsKey  = flag.String("tlsKey", "", "Path to TLS Key. If this and -tlsCert is specified, service runs as TLS server.")
+
 	sqliteFile = flag.String("sqliteFile", "/tmp/trek.sqlite", "File path of the sqlite DB file to use.")
 )
 
@@ -624,7 +627,7 @@ func main() {
 	router.LoadHTMLGlob("templates/*")
 	trekkerServer := TrekServer{
 		Server: &http.Server{
-			Addr:    *listen,
+			Addr:    fmt.Sprintf(":%d", *port),
 			Handler: router, // use `http.DefaultServeMux`
 		},
 		DB:       db,
@@ -638,7 +641,11 @@ func main() {
 	router.StaticFile("/favicon.ico", "./resources/favicon.ico")
 	router.StaticFS("/resources", http.Dir("./resources/"))
 
-	glog.Fatal(trekkerServer.Server.ListenAndServe())
+	if *tlsCert != "" && *tlsKey != "" {
+		router.RunTLS(fmt.Sprintf(":%d", *port), *tlsCert, *tlsKey)
+	} else {
+		router.Run(fmt.Sprintf(":%d", *port))
+	}
 
 	// Wait for abort signal (e.g. CTRL-C pressed).
 	c := make(chan os.Signal)

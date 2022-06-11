@@ -40,7 +40,11 @@ Note: If you compile it and move the binary elsewhere, keep the `templates` and 
 
 * `devices`: Comma separated list of iotracker device IDs you'd like to keep track of. The device ID should be as configured in TTN.
 
-* `listen`: Port the Trek webserver listens on.
+* `port`: Port the Trek webserver listens on.
+
+* `tlsCert`: Path to TLS Certificate. If this and `-tlsKey` is specified, service runs as TLS server.
+
+* `tlsKey`: Path to TLS Key. If this and `-tlsCert` is specified, service runs as TLS server.
 
 * `sqliteFile`: Path to the SQLite file to use. If it doesn't exist, the file will be created (but the folder must exist).
 
@@ -61,6 +65,12 @@ Currently the webserver exposes the following endpoints:
   * `device`: The device ID to search and display information for.
 
   * `mustHaveGPS`: Set to `1` or `true` to only display messages of the device which have a GPS position.
+
+  * `lat`: Latitude of an optional user location to display.
+
+  * `lon`: Longitude of an optional user location to display.
+
+  * `showBrowserLoc`: Set to `1` or `true` for the website to try to get the device's/browser's location and display it on the map as well.
 
   * `format`: Accepts either `json` or `html` (default) to render the output differently.
 
