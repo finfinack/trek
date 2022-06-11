@@ -122,11 +122,6 @@ const (
 	// statsDuration defines over what time period statistics should be queried.
 	statsDuration = 24 * time.Hour
 
-	// latPadding and lonPadding define the size of the OSM box and thus
-	// the zoom level. Larger padding equals zooming out further.
-	latPadding = 0.001
-	lonPadding = 0.002
-
 	// battMax is the max reading of an iotracker device with fresh batteries.
 	// This is used to calculate how full the battery currently is.
 	battMax = 254
@@ -535,22 +530,6 @@ func (i *Trek) disconnectHandler(client mqtt.Client, err error) {
 	glog.Errorf("MQTT connection lost: %s", err)
 }
 
-func bboxLonMin(l float64) string {
-	return fmt.Sprintf("%f", l-lonPadding)
-}
-
-func bboxLonMax(l float64) string {
-	return fmt.Sprintf("%f", l+lonPadding)
-}
-
-func bboxLatMin(l float64) string {
-	return fmt.Sprintf("%f", l-latPadding)
-}
-
-func bboxLatMax(l float64) string {
-	return fmt.Sprintf("%f", l+latPadding)
-}
-
 func battLevel(b int) int {
 	if b == battExt {
 		return 100
@@ -639,10 +618,6 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	router.SetFuncMap(template.FuncMap{
-		"bboxLonMin":     bboxLonMin,
-		"bboxLonMax":     bboxLonMax,
-		"bboxLatMin":     bboxLatMin,
-		"bboxLatMax":     bboxLatMax,
 		"battLevel":      battLevel,
 		"formatDuration": formatDuration,
 		"formatTime":     formatTime,
