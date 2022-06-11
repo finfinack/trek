@@ -4,6 +4,10 @@
 ### Custom ###
 
 trek
+
+trek.sh
+update.sh
+
 **/*.sqlite
 **/*.sqlite3
 **/*.db
