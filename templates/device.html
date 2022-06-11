@@ -40,22 +40,22 @@
         </div>
         <div class="col">
           {{ if .hasGPS }}
-            <a href="/trek/v1/device?device={{ .device }}&mustHaveGPS=false&format=html" type="button" class="btn btn-outline-secondary btn-sm">Latest data</a>
+            <a href="/trek/v1/device?device={{ .device }}&format=html" type="button" class="btn btn-outline-secondary btn-sm">Latest data</a>
           {{ else }}
             <a href="/trek/v1/device?device={{ .device }}&mustHaveGPS=true&format=html" type="button" class="btn btn-outline-secondary btn-sm">Last position</a>
           {{ end }}
           <a href="/?device={{ .device }}" type="button" class="btn btn-outline-danger btn-sm">Send commands</a>
           {{ if .showBrowserLoc }}
             {{ if .hasGPS }}
-              <a href="/trek/v1/device?device={{ .device }}&mustHaveGPS=true&showBrowserLoc=false&format=html" type="button" class="btn btn-outline-info btn-sm">Hide my position</a>
+              <a href="/trek/v1/device?device={{ .device }}&mustHaveGPS=true&format=html" type="button" class="btn btn-outline-info btn-sm">Hide my position</a>
             {{ else }}
-              <a href="/trek/v1/device?device={{ .device }}&mustHaveGPS=false&showBrowserLoc=false&format=html" type="button" class="btn btn-outline-info btn-sm">Hide my position</a>
+              <a href="/trek/v1/device?device={{ .device }}&format=html" type="button" class="btn btn-outline-info btn-sm">Hide my position</a>
             {{ end }}
           {{ else }}
             {{ if .hasGPS }}
               <a href="/trek/v1/device?device={{ .device }}&mustHaveGPS=true&showBrowserLoc=true&format=html" type="button" class="btn btn-outline-info btn-sm">Show my position</a>
             {{ else }}
-              <a href="/trek/v1/device?device={{ .device }}&mustHaveGPS=false&showBrowserLoc=true&format=html" type="button" class="btn btn-outline-info btn-sm">Show my position</a>
+              <a href="/trek/v1/device?device={{ .device }}&showBrowserLoc=true&format=html" type="button" class="btn btn-outline-info btn-sm">Show my position</a>
             {{ end }}
           {{ end }}
         </div>
