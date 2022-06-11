@@ -53,9 +53,9 @@
       </div>
       <div class="row">
         <div class="col">
-          <div id="map-{{ .GatewayIDs.GatewayID }}" style="width: 600px; height: 400px;"></div>
+          <div id="map-tracker" style="width: 600px; height: 400px;"></div>
           <script>
-            var map = L.map('map-{{ .GatewayIDs.GatewayID }}').setView([{{ .gps.Latitude }}, {{ .gps.Longitude }}], 14);
+            var map = L.map('map-tracker').setView([{{ .gps.Latitude }}, {{ .gps.Longitude }}], 14);
           
             var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
               maxZoom: 19,
