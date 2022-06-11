@@ -25,18 +25,37 @@
       <div class="row">
         <div class="col">
           <form action="/trek/v1/device">
-            <div class="mb-3">
-              <label class="form-label" for="device">Device</label>
-              <input class="form-control" type="text" id="device" name="device" value="{{ .device }}"><br>
-
+            <div class="form-floating mb-3">
               <input class="form-check-input" type="hidden" id="format" name="format" value="html">
+            </div>
 
+            <div class="form-floating mb-3">
+              <input class="form-control" type="text" id="device" name="device" value="{{ .device }}" placeholder="Device">
+              <label class="form-label" for="device">Device</label>
+            </div>
+
+            <p>Location to display (optional)</p>
+
+            <div class="form-floating mb-3">
+              <input class="form-control" type="text" id="lat" name="lat" value="" placeholder="Latitude (optional)">
+              <label class="form-label" for="lat">Latitude (optional)</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input class="form-control" type="text" id="lon" name="lon" value="" placeholder="Longitude (optional)">
+              <label class="form-label" for="lon">Longitude (optional)</label>
+            </div>
+
+            <div class="mb-3">
               <input class="form-check-input" type="checkbox" id="showBrowserLoc" name="showBrowserLoc" value="true">
-              <label class="form-check-label" for="showBrowserLoc">Show your location</label><br>
+              <label class="form-check-label" for="showBrowserLoc">Show your location</label>
+            </div>
 
+            <div class="mb-3">
               <input class="form-check-input" type="checkbox" id="mustHaveGPS" name="mustHaveGPS" value="true">
-              <label class="form-check-label" for="mustHaveGPS">Only show data with GPS info</label><br>
+              <label class="form-check-label" for="mustHaveGPS">Only show data with GPS info</label>
+            </div>
 
+            <div class="mb-3">
               <input class="btn btn-primary" type="submit" value="Query">
             </div>
           </form>
@@ -51,14 +70,16 @@
       <div class="row">
         <div class="col">
           <form action="/trek/v1/downlink">
-            <div class="mb-3">
+            <input class="form-check-input" type="hidden" id="format" name="format" value="html">
+
+            <div class="form-floating mb-3">
+              <input class="form-control" type="text" id="device" name="device" value="{{ .device }}" placeholder="Device">
               <label class="form-label" for="device">Device</label>
-              <input class="form-control" type="text" id="device" name="device" value="{{ .device }}"><br>
+            </div>
 
-              <input class="form-check-input" type="hidden" id="format" name="format" value="html">
+            <p>Action</p>
 
-              <p>Action</p>
-
+            <div class="mb-3">
               <input class="form-check-input" type="radio" id="sctnormalfindmode" name="message" value="060000021E0A1E">
               <label class="form-check-label" for="sctnormalfindmode">Change normal timer to 10 minutes and the alive timer to 30 minutes, with enabling find mode for 30 minutes (default)</label><br>
               <input class="form-check-input" type="radio" id="sctnormalnofindmode" name="message" value="06000002000A1E">
@@ -77,7 +98,9 @@
 
               <input class="form-check-input" type="radio" id="reboot" name="message" value="120102">
               <label class="form-check-label" for="reboot">Reboot without configuration changes</label><br>
+            </div>
 
+            <div class="mb-3">
               <input class="btn btn-primary" type="submit" value="Send">
             </div>
           </form>
