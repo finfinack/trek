@@ -12,6 +12,21 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js" integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ==" crossorigin=""></script>
 
+    <script>
+      const iconTracker = L.icon({
+        iconUrl: '/resources/icon-tracker.png',
+        iconSize: [32, 32],
+      });
+      const iconGateway = L.icon({
+        iconUrl: '/resources/icon-gateway.png',
+        iconSize: [32, 32],
+      });
+      const iconUser = L.icon({
+        iconUrl: '/resources/icon-user.png',
+        iconSize: [32, 32],
+      });
+    </script>;
+
     <div class="container">
       <div class="row">
         <div class="col">
@@ -55,14 +70,21 @@
         <div class="col">
           <div id="map-tracker" style="width: 600px; height: 400px;"></div>
           <script>
-            var map = L.map('map-tracker').setView([{{ .gps.Latitude }}, {{ .gps.Longitude }}], 14);
+            const trackermap = L.map('map-tracker').setView([{{ .gps.Latitude }}, {{ .gps.Longitude }}], 14);
           
             var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
               maxZoom: 19,
               attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            }).addTo(map);
+            }).addTo(trackermap);
           
-            var marker = L.marker([{{ .gps.Latitude }}, {{ .gps.Longitude }}]).addTo(map);
+            L.marker([{{ .gps.Latitude }}, {{ .gps.Longitude }}], {icon: iconTracker}).addTo(trackermap)
+            	.bindPopup('<b>Tracker: {{ .device }}</b><br>Luminosity: {{ .lum }} lux<br>Temperature: {{ .temp }} degrees<br>Max Acceleration: {{ .acc }} g<br>Battery: {{ .battLevel }}%');
+
+            {{ if .hasUserLoc }}
+              L.marker([{{ .userLoc.Latitude }}, {{ .userLoc.Longitude }}], {icon: iconUser}).addTo(trackermap);
+              var polyline = L.polyline([[{{ .gps.Latitude }}, {{ .gps.Longitude }}], [{{ .userLoc.Latitude }}, {{ .userLoc.Longitude }}]], {color: 'red'}).addTo(trackermap);
+              trackermap.fitBounds(polyline.getBounds());
+            {{ end }}
           </script>
         </div>
       </div>
@@ -155,14 +177,21 @@
               </div>
               <div id="map-{{ .GatewayIDs.GatewayID }}" style="width: 400px; height: 200px;"></div>
               <script>
-                var map = L.map('map-{{ .GatewayIDs.GatewayID }}').setView([{{ .Location.Latitude }}, {{ .Location.Longitude }}], 14);
+                var gwmap = L.map('map-{{ .GatewayIDs.GatewayID }}').setView([{{ .Location.Latitude }}, {{ .Location.Longitude }}], 14);
               
                 var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                   maxZoom: 19,
                   attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                }).addTo(map);
+                }).addTo(gwmap);
               
-                var marker = L.marker([{{ .Location.Latitude }}, {{ .Location.Longitude }}]).addTo(map);
+                L.marker([{{ .Location.Latitude }}, {{ .Location.Longitude }}], {icon: iconGateway}).addTo(gwmap)
+		                .bindPopup('<b>Gateway: {{ .GatewayIDs.GatewayID }}</b><br>RSSI({{ .RSSI }})');
+
+                {{ if $.hasGPS }}
+                  L.marker([{{ .Location.Latitude }}, {{ .Location.Longitude }}], {icon: iconGateway}).addTo(trackermap)
+		                .bindPopup('<b>Gateway: {{ .GatewayIDs.GatewayID }}</b><br>RSSI({{ .RSSI }})');
+                  L.polyline([[{{ $.gps.Latitude }}, {{ $.gps.Longitude }}], [{{ .Location.Latitude }}, {{ .Location.Longitude }}]], {color: 'blue'}).addTo(trackermap);
+                {{ end }}
               </script>
             </li>
           {{ end }}

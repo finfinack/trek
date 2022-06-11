@@ -28,7 +28,7 @@ go run trek.go \
   -sqliteFile /tmp/trek.sqlite
 ```
 
-Note: If you compile it and move the binary elsewhere, keep the `templates` folder next to the binary as the html templates are read from that folder at runtime.
+Note: If you compile it and move the binary elsewhere, keep the `templates` and `resources` folders next to the binary as the HTML templates and static resources are read from those folders at runtime.
 
 ### Flags
 

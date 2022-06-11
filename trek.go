@@ -636,6 +636,10 @@ func main() {
 	router.GET(indexEndpoint, trekkerServer.indexHandler)
 	router.GET(deviceEndpoint, trekkerServer.deviceHandler)
 	router.GET(downlinkEndpoint, trekkerServer.downlinkHandler)
+
+	router.StaticFile("/favicon.ico", "./resources/favicon.ico")
+	router.StaticFS("/resources", http.Dir("./resources/"))
+
 	glog.Fatal(trekkerServer.Server.ListenAndServe())
 
 	// Wait for abort signal (e.g. CTRL-C pressed).
