@@ -45,6 +45,19 @@
             <a href="/trek/v1/device?device={{ .device }}&mustHaveGPS=true&format=html" type="button" class="btn btn-outline-secondary btn-sm">Last position</a>
           {{ end }}
           <a href="/?device={{ .device }}" type="button" class="btn btn-outline-danger btn-sm">Send commands</a>
+          {{ if .showBrowserLoc }}
+            {{ if .hasGPS }}
+              <a href="/trek/v1/device?device={{ .device }}&mustHaveGPS=true&showBrowserLoc=false&format=html" type="button" class="btn btn-outline-info btn-sm">Hide my position</a>
+            {{ else }}
+              <a href="/trek/v1/device?device={{ .device }}&mustHaveGPS=false&showBrowserLoc=false&format=html" type="button" class="btn btn-outline-info btn-sm">Hide my position</a>
+            {{ end }}
+          {{ else }}
+            {{ if .hasGPS }}
+              <a href="/trek/v1/device?device={{ .device }}&mustHaveGPS=true&showBrowserLoc=true&format=html" type="button" class="btn btn-outline-info btn-sm">Show my position</a>
+            {{ else }}
+              <a href="/trek/v1/device?device={{ .device }}&mustHaveGPS=false&showBrowserLoc=true&format=html" type="button" class="btn btn-outline-info btn-sm">Show my position</a>
+            {{ end }}
+          {{ end }}
         </div>
       </div>
 
@@ -73,7 +86,7 @@
             const trackermap = L.map('map-tracker').setView([{{ .gps.Latitude }}, {{ .gps.Longitude }}], 14);
           
             var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              maxZoom: 19,
+              maxZoom: 18,
               attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             }).addTo(trackermap);
           
@@ -84,6 +97,18 @@
               L.marker([{{ .userLoc.Latitude }}, {{ .userLoc.Longitude }}], {icon: iconUser}).addTo(trackermap);
               var polyline = L.polyline([[{{ .gps.Latitude }}, {{ .gps.Longitude }}], [{{ .userLoc.Latitude }}, {{ .userLoc.Longitude }}]], {color: 'red'}).addTo(trackermap);
               trackermap.fitBounds(polyline.getBounds());
+            {{ end }}
+
+            {{ if .showBrowserLoc }}
+              function showUserPositionOnTrackerMap(position) {
+                L.marker([position.coords.latitude, position.coords.longitude], {icon: iconUser}).addTo(trackermap);
+                var polyline = L.polyline([[{{ .gps.Latitude }}, {{ .gps.Longitude }}], [position.coords.latitude, position.coords.longitude]], {color: 'red'}).addTo(trackermap);
+                trackermap.fitBounds(polyline.getBounds());
+              }
+
+              if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showUserPositionOnTrackerMap);
+              }
             {{ end }}
           </script>
         </div>
@@ -180,7 +205,7 @@
                 var gwmap = L.map('map-{{ .GatewayIDs.GatewayID }}').setView([{{ .Location.Latitude }}, {{ .Location.Longitude }}], 14);
               
                 var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                  maxZoom: 19,
+                  maxZoom: 16,
                   attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 }).addTo(gwmap);
               
@@ -191,6 +216,24 @@
                   L.marker([{{ .Location.Latitude }}, {{ .Location.Longitude }}], {icon: iconGateway}).addTo(trackermap)
 		                .bindPopup('<b>Gateway: {{ .GatewayIDs.GatewayID }}</b><br>RSSI({{ .RSSI }})');
                   L.polyline([[{{ $.gps.Latitude }}, {{ $.gps.Longitude }}], [{{ .Location.Latitude }}, {{ .Location.Longitude }}]], {color: 'blue'}).addTo(trackermap);
+                {{ end }}
+
+                {{ if $.hasUserLoc }}
+                  L.marker([{{ $.userLoc.Latitude }}, {{ $.userLoc.Longitude }}], {icon: iconUser}).addTo(gwmap);
+                  var polyline = L.polyline([[{{ .Location.Latitude }}, {{ .Location.Longitude }}], [{{ $.userLoc.Latitude }}, {{ $.userLoc.Longitude }}]], {color: 'red'}).addTo(gwmap);
+                  gwmap.fitBounds(polyline.getBounds());
+                {{ end }}
+
+                {{ if $.showBrowserLoc }}
+                  function showUserPositionOnGwMap(position) {
+                    L.marker([position.coords.latitude, position.coords.longitude], {icon: iconUser}).addTo(gwmap);
+                    var polyline = L.polyline([[{{ .Location.Latitude }}, {{ .Location.Longitude }}], [position.coords.latitude, position.coords.longitude]], {color: 'red'}).addTo(trackermap);
+                    gwmap.fitBounds(polyline.getBounds());
+                  }
+
+                  if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(showUserPositionOnGwMap);
+                  }
                 {{ end }}
               </script>
             </li>

@@ -266,11 +266,12 @@ func (t *TrekServer) indexHandler(c *gin.Context) {
 
 func (t *TrekServer) deviceHandler(c *gin.Context) {
 	type queryParameters struct {
-		Device      string  `form:"device"`
-		MustHaveGPS string  `form:"mustHaveGPS"`
-		Lat         float64 `form:"lat"`
-		Lon         float64 `form:"lon"`
-		Format      string  `form:"format"`
+		Device         string  `form:"device"`
+		MustHaveGPS    bool    `form:"mustHaveGPS"`
+		Lat            float64 `form:"lat"`
+		Lon            float64 `form:"lon"`
+		ShowBrowserLoc bool    `form:"showBrowserLoc"`
+		Format         string  `form:"format"`
 	}
 
 	var parsedQueryParameters queryParameters
@@ -285,10 +286,6 @@ func (t *TrekServer) deviceHandler(c *gin.Context) {
 		return
 	}
 
-	var mustHaveGPS bool
-	if parsedQueryParameters.MustHaveGPS == "1" || parsedQueryParameters.MustHaveGPS == "true" {
-		mustHaveGPS = true
-	}
 	var userLoc *geo.Location
 	if parsedQueryParameters.Lat != 0 && parsedQueryParameters.Lon != 0 {
 		userLoc = &geo.Location{
@@ -296,7 +293,7 @@ func (t *TrekServer) deviceHandler(c *gin.Context) {
 			Longitude: parsedQueryParameters.Lon,
 		}
 	}
-	m, err := t.getLatestData(parsedQueryParameters.Device, mustHaveGPS, userLoc)
+	m, err := t.getLatestData(parsedQueryParameters.Device, parsedQueryParameters.MustHaveGPS, userLoc)
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -313,21 +310,22 @@ func (t *TrekServer) deviceHandler(c *gin.Context) {
 		fallthrough
 	default:
 		c.HTML(http.StatusOK, "device.html", gin.H{
-			"device":      m.DeviceID,
-			"receivedAt":  m.ReceivedAt,
-			"receivedAgo": time.Since(m.ReceivedAt),
-			"hasGPS":      m.HasGPS,
-			"gps":         m.GPS,
-			"lum":         m.Luminosity,
-			"temp":        m.Temperature,
-			"acc":         m.MaxAcceleration,
-			"battLevel":   battLevel(m.Battery),
-			"gateways":    m.Gateways,
-			"hasAP":       m.HasAccessPoints,
-			"aps":         m.AccessPoints,
-			"hasUserLoc":  m.HasUserLocation,
-			"userLoc":     m.UserLocation,
-			"stats":       stats,
+			"device":         m.DeviceID,
+			"receivedAt":     m.ReceivedAt,
+			"receivedAgo":    time.Since(m.ReceivedAt),
+			"hasGPS":         m.HasGPS,
+			"gps":            m.GPS,
+			"lum":            m.Luminosity,
+			"temp":           m.Temperature,
+			"acc":            m.MaxAcceleration,
+			"battLevel":      battLevel(m.Battery),
+			"gateways":       m.Gateways,
+			"hasAP":          m.HasAccessPoints,
+			"aps":            m.AccessPoints,
+			"hasUserLoc":     m.HasUserLocation,
+			"userLoc":        m.UserLocation,
+			"showBrowserLoc": parsedQueryParameters.ShowBrowserLoc,
+			"stats":          stats,
 		})
 	}
 }
