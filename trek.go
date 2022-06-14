@@ -371,11 +371,12 @@ func (t *TrekServer) downlinkHandler(c *gin.Context) {
 
 type Trek struct {
 	client mqtt.Client
+	topics []string
 
 	Messages chan payload.Message
 }
 
-func (i *Trek) Connect(broker string, username string, password string) error {
+func (i *Trek) Connect(broker, username, password string, topics []string) error {
 	if i.client != nil && i.client.IsConnected() {
 		return errors.New("MQTT already connected")
 	}
@@ -397,6 +398,7 @@ func (i *Trek) Connect(broker string, username string, password string) error {
 	opts.SetOnConnectHandler(i.connectHandler)
 	opts.SetConnectionLostHandler(i.disconnectHandler)
 
+	i.topics = topics // will subscribe in "connected" handler
 	i.client = mqtt.NewClient(opts)
 	token := i.client.Connect()
 	token.Wait()
@@ -404,17 +406,26 @@ func (i *Trek) Connect(broker string, username string, password string) error {
 }
 
 func (i *Trek) Disconnect() {
+	for _, t := range i.topics {
+		if err := i.unsubscribe(t); err != nil {
+			glog.Errorf("MQTT error unsubscribing from %q: %s", t, err)
+		} else {
+			glog.Infof("MQTT unsubscribed from %q", t)
+		}
+	}
+	i.topics = nil
 	i.client.Disconnect(250)
+	i.client = nil
 	time.Sleep(1 * time.Second)
 }
 
-func (i *Trek) Subscribe(topic string) error {
+func (i *Trek) subscribe(topic string) error {
 	token := i.client.Subscribe(topic, 1, i.messagePubHandler)
 	token.Wait()
 	return token.Error()
 }
 
-func (i *Trek) Unsubscribe(topic string) error {
+func (i *Trek) unsubscribe(topic string) error {
 	token := i.client.Unsubscribe(topic)
 	token.Wait()
 	return token.Error()
@@ -464,8 +475,6 @@ func (i *Trek) messagePubHandler(client mqtt.Client, msg mqtt.Message) {
 			glog.Warningf("unable to unmarshal received message: %s", err)
 			return
 		}
-		// glog.Infof("message decoded: %+v", payload)
-
 		t, err := time.Parse(loraTimeFormat, p.ReceivedAt)
 		if err != nil {
 			glog.Warningf("unable to parse timestamp: %s", err)
@@ -491,21 +500,18 @@ func (i *Trek) messagePubHandler(client mqtt.Client, msg mqtt.Message) {
 			glog.Warningf("unable to unmarshal received message: %s", err)
 			return
 		}
-		// glog.Infof("message decoded: %+v", payload)
 	case strings.HasSuffix(msg.Topic(), "/down/sent"):
 		p := &payload.DownSent{}
 		if err := json.Unmarshal(msg.Payload(), p); err != nil {
 			glog.Warningf("unable to unmarshal received message: %s", err)
 			return
 		}
-		// glog.Infof("message decoded: %+v", payload)
 	case strings.HasSuffix(msg.Topic(), "/down/ack"):
 		p := &payload.DownAck{}
 		if err := json.Unmarshal(msg.Payload(), p); err != nil {
 			glog.Warningf("unable to unmarshal received message: %s", err)
 			return
 		}
-		// glog.Infof("message decoded: %+v", payload)
 	case strings.HasSuffix(msg.Topic(), "/down/nack"):
 		glog.Warningf("message type not implemented (%s): %s", msg.Topic(), msg.Payload())
 	case strings.HasSuffix(msg.Topic(), "/down/failed"):
@@ -525,6 +531,15 @@ func (i *Trek) messagePubHandler(client mqtt.Client, msg mqtt.Message) {
 
 func (i *Trek) connectHandler(client mqtt.Client) {
 	glog.Info("MQTT connected")
+
+	// Ensures when we reconnect, subscriptions are set up again as well.
+	for _, t := range i.topics {
+		if err := i.subscribe(t); err != nil {
+			glog.Errorf("MQTT error subscribing to %q: %s", t, err)
+		} else {
+			glog.Infof("MQTT subscribed to %q", t)
+		}
+	}
 }
 
 func (i *Trek) disconnectHandler(client mqtt.Client, err error) {
@@ -589,23 +604,19 @@ func main() {
 		DB: db,
 	}
 
-	// Connect to MQTT broker.
+	// Connect to MQTT broker and subscribe to topics.
+	var topics []string
+	for _, t := range subTopicTmpl {
+		for _, d := range devs {
+			topics = append(topics, fmt.Sprintf(t, *mqttUsername, d))
+		}
+	}
 	messages := make(chan payload.Message, 10)
 	trekker := &Trek{
 		Messages: messages,
 	}
-	if err := trekker.Connect(*mqttBroker, *mqttUsername, *mqttPassword); err != nil {
+	if err := trekker.Connect(*mqttBroker, *mqttUsername, *mqttPassword, topics); err != nil {
 		glog.Exit(err)
-	}
-
-	// Subscribe to all topics.
-	for _, t := range subTopicTmpl {
-		for _, d := range devs {
-			topic := fmt.Sprintf(t, *mqttUsername, d)
-			if err := trekker.Subscribe(topic); err != nil {
-				glog.Error(err)
-			}
-		}
 	}
 
 	// Export samples.
@@ -652,16 +663,7 @@ func main() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-
 		// Unsubscribe and disconnect.
-		for _, t := range subTopicTmpl {
-			for _, d := range devs {
-				topic := fmt.Sprintf(t, *mqttUsername, d)
-				if err := trekker.Unsubscribe(topic); err != nil {
-					glog.Error(err)
-				}
-			}
-		}
 		trekker.Disconnect()
 		trekkerServer.Server.Shutdown(ctx)
 		glog.Flush()
