@@ -10,8 +10,8 @@ type DownlinkSent struct {
 }
 
 type DownSent struct {
-	EndDeviceIDs   DeviceIDs    `json:"end_device_ids"`
-	CorrelationIDs []string     `json:"correlation_ids"`
-	ReceivedAt     string       `json:"received_at"`
-	DownlinkSent   DownlinkSent `json:"downlink_sent"`
+	EndDeviceIDs   *DeviceIDs    `json:"end_device_ids"`
+	CorrelationIDs []string      `json:"correlation_ids"`
+	ReceivedAt     string        `json:"received_at"`
+	DownlinkSent   *DownlinkSent `json:"downlink_sent"`
 }

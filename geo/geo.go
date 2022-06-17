@@ -13,8 +13,26 @@ func deg2rad(deg float64) float64 {
 }
 
 type Location struct {
-	Latitude  float64
-	Longitude float64
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+	Altitude  int     `json:"altitude"`
+
+	// Location Metadata.
+	Source string `json:"source"`
+
+	// GPS Metadata
+	AltRef  float32 `json:"altRef"`
+	COG     float32 `json:"cog"`
+	HAcc    int     `json:"hAcc"`
+	HDOP    float32 `json:"hdop"`
+	NavStat int     `json:"navStat"`
+	NumSvs  int     `json:"numSvs"`
+	SOG     float32 `json:"sog"`
+	VAcc    int     `json:"vAcc"`
+
+	// Calculated fields.
+	DistanceFromTracker float64 `json:"distance_from_tracker"`
+	DistanceFromUser    float64 `json:"distance_from_user"`
 }
 
 func (l *Location) Distance(loc *Location) float64 {

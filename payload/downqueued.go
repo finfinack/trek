@@ -8,8 +8,8 @@ type DownlinkQueued struct {
 }
 
 type DownQueued struct {
-	EndDeviceIDs   DeviceIDs      `json:"end_device_ids"`
-	CorrelationIDs []string       `json:"correlation_ids"`
-	Confirmed      bool           `json:"confirmed"`
-	DownlinkQueued DownlinkQueued `json:"downlink_queued"`
+	EndDeviceIDs   *DeviceIDs      `json:"end_device_ids"`
+	CorrelationIDs []string        `json:"correlation_ids"`
+	Confirmed      bool            `json:"confirmed"`
+	DownlinkQueued *DownlinkQueued `json:"downlink_queued"`
 }

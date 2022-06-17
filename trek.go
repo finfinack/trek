@@ -195,10 +195,7 @@ func (t *TrekServer) getLatestData(deviceID string, mustHaveGPS bool, userLoc *g
 
 	if userLoc != nil {
 		m.HasUserLocation = true
-		m.UserLocation = payload.Location{
-			Latitude:  userLoc.Latitude,
-			Longitude: userLoc.Longitude,
-		}
+		m.UserLocation = userLoc
 	}
 
 	if hasGPS {
@@ -445,7 +442,7 @@ func (i *Trek) Publish(topic string, msg string) error {
 		return err
 	}
 	payload := &payload.DownPush{
-		Downlinks: []payload.Downlink{
+		Downlinks: []*payload.Downlink{
 			{
 				FPort:      1,
 				FRMPayload: encoded,

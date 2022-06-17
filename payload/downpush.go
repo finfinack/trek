@@ -8,5 +8,5 @@ type Downlink struct {
 }
 
 type DownPush struct {
-	Downlinks []Downlink `json:"downlinks"`
+	Downlinks []*Downlink `json:"downlinks"`
 }
