@@ -34,6 +34,17 @@
               <label class="form-label" for="device">Device</label>
             </div>
 
+            <p>Location history</p>
+
+            <div class="form-floating mb-3">
+              <input class="form-control" type="text" id="startDate" name="startDate" value="{{ .startDate }}" placeholder="Start date (e.g. 2022-05-10)">
+              <label class="form-label" for="startDate">Start date</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input class="form-control" type="text" id="endDate" name="endDate" value="{{ .endDate }}" placeholder="End date (e.g. 2022-06-10)">
+              <label class="form-label" for="endDate">End date</label>
+            </div>
+
             <p>Location to display (optional)</p>
 
             <div class="form-floating mb-3">

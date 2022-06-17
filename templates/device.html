@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Trek Locator</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css" integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ==" crossorigin=""/>
+    <link href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css" rel="stylesheet" integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ==" crossorigin=""/>
   </head>
 
   <body>
@@ -40,22 +40,22 @@
         </div>
         <div class="col">
           {{ if .hasGPS }}
-            <a href="/trek/v1/device?device={{ .device }}&format=html" type="button" class="btn btn-outline-secondary btn-sm">Latest data</a>
+            <a href="/trek/v1/device?device={{ .device }}&startDate={{ .startDate }}&endDate={{ .endDate }}&format=html" type="button" class="btn btn-outline-secondary btn-sm">Latest data</a>
           {{ else }}
-            <a href="/trek/v1/device?device={{ .device }}&mustHaveGPS=true&format=html" type="button" class="btn btn-outline-secondary btn-sm">Last position</a>
+            <a href="/trek/v1/device?device={{ .device }}&startDate={{ .startDate }}&endDate={{ .endDate }}&mustHaveGPS=true&format=html" type="button" class="btn btn-outline-secondary btn-sm">Last position</a>
           {{ end }}
           <a href="/?device={{ .device }}" type="button" class="btn btn-outline-danger btn-sm">Send commands</a>
           {{ if .showBrowserLoc }}
             {{ if .hasGPS }}
-              <a href="/trek/v1/device?device={{ .device }}&mustHaveGPS=true&format=html" type="button" class="btn btn-outline-info btn-sm">Hide my position</a>
+              <a href="/trek/v1/device?device={{ .device }}&startDate={{ .startDate }}&endDate={{ .endDate }}&mustHaveGPS=true&format=html" type="button" class="btn btn-outline-info btn-sm">Hide my position</a>
             {{ else }}
-              <a href="/trek/v1/device?device={{ .device }}&format=html" type="button" class="btn btn-outline-info btn-sm">Hide my position</a>
+              <a href="/trek/v1/device?device={{ .device }}&startDate={{ .startDate }}&endDate={{ .endDate }}&format=html" type="button" class="btn btn-outline-info btn-sm">Hide my position</a>
             {{ end }}
           {{ else }}
             {{ if .hasGPS }}
-              <a href="/trek/v1/device?device={{ .device }}&mustHaveGPS=true&showBrowserLoc=true&format=html" type="button" class="btn btn-outline-info btn-sm">Show my position</a>
+              <a href="/trek/v1/device?device={{ .device }}&startDate={{ .startDate }}&endDate={{ .endDate }}&mustHaveGPS=true&showBrowserLoc=true&format=html" type="button" class="btn btn-outline-info btn-sm">Show my position</a>
             {{ else }}
-              <a href="/trek/v1/device?device={{ .device }}&showBrowserLoc=true&format=html" type="button" class="btn btn-outline-info btn-sm">Show my position</a>
+              <a href="/trek/v1/device?device={{ .device }}&startDate={{ .startDate }}&endDate={{ .endDate }}&showBrowserLoc=true&format=html" type="button" class="btn btn-outline-info btn-sm">Show my position</a>
             {{ end }}
           {{ end }}
         </div>
@@ -113,7 +113,6 @@
           </script>
         </div>
       </div>
-
     {{ else }}
       <div class="row">
         <div class="col">

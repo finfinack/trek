@@ -112,6 +112,26 @@ const (
 		ORDER BY ReceivedAt DESC
 		LIMIT 1;`
 
+	historicalDataTmpl = `SELECT
+			ReceivedAt,
+			Gateways,
+			HasGPS,
+			HasAccesspoints,
+			Battery,
+			AccessPoints,
+			Temperature,
+			Luminosity,
+			MaxAcceleration,
+			GPS,
+			RAWMessage
+		FROM
+			trek
+		WHERE
+			DeviceID = ?
+			AND ReceivedAt > ?
+			AND ReceivedAt < ?
+		ORDER BY ReceivedAt DESC;`
+
 	statsTmpl = `SELECT
 			COUNT(CASE WHEN HasGPS THEN 1 END) AS HasGPS,
 			COUNT(*) AS Total
@@ -119,11 +139,13 @@ const (
 			trek
 		WHERE
 			DeviceID = ?
-			AND ReceivedAt > ?;
+			AND ReceivedAt > ?
+			AND ReceivedAt < ?;
 	`
 
-	// statsDuration defines over what time period statistics should be queried.
-	statsDuration = 24 * time.Hour
+	// defaultLocationHistoryDuration defines how far back history goes by default.
+	defaultLocationHistoryDuration = 24 * time.Hour
+	locationHistoryFmt             = "2006-01-02"
 
 	// battMax is the max reading of an iotracker device with fresh batteries.
 	// This is used to calculate how full the battery currently is.
@@ -138,29 +160,58 @@ type TrekServer struct {
 	MQTTUser string
 }
 
-func (t *TrekServer) getDeviceStats(deviceID string, ago time.Duration) (*payload.Stats, error) {
-	since := time.Now().Add(-ago).UnixMilli()
-
+func (t *TrekServer) getDeviceStats(deviceID string, startTime, endTime time.Time) (*payload.Stats, error) {
 	statement, err := t.DB.Prepare(statsTmpl)
 	if err != nil {
 		return nil, err
 	}
 
 	var hasGPS, total int
-	if err := statement.QueryRow(deviceID, since).Scan(&hasGPS, &total); err != nil {
+	if err := statement.QueryRow(deviceID, startTime.UnixMilli(), endTime.UnixMilli()).Scan(&hasGPS, &total); err != nil {
 		return nil, err
 	}
 
+	dur := endTime.Sub(startTime)
 	var avg time.Duration
 	if total > 0 {
-		avg = time.Duration(float64(time.Second) * statsDuration.Seconds() / float64(total))
+		avg = time.Duration(float64(time.Second) * dur.Seconds() / float64(total))
 	}
 	return &payload.Stats{
 		TotalCount:             total,
 		GPSCount:               hasGPS,
-		StatsDuration:          ago,
+		StatsDuration:          dur,
 		AverageMessageInterval: avg,
 	}, nil
+}
+
+func (t *TrekServer) getHistoricalData(deviceID string, startTime, endTime time.Time) ([]*payload.Message, error) {
+	statement, err := t.DB.Prepare(historicalDataTmpl)
+	if err != nil {
+		return nil, err
+	}
+
+	var msgs []*payload.Message
+
+	rows, err := statement.Query(deviceID, startTime.UnixMilli(), endTime.UnixMilli())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var hasGPS, hasAPs bool
+		var gateways, aps, gps, raw string
+		var received int64
+		var battery int
+		var temp, lum, acc float32
+		if err := rows.Scan(&received, &gateways, &hasGPS, &hasAPs, &battery, &aps, &temp, &lum, &acc, &gps, &raw); err != nil {
+			return nil, err
+		}
+
+		msgs = append(msgs, payload.CreateMessageFromRaw(deviceID, nil, received, gateways, hasGPS, hasAPs, battery, aps, temp, lum, acc, gps, raw))
+	}
+
+	return msgs, nil
 }
 
 func (t *TrekServer) getLatestData(deviceID string, mustHaveGPS bool, userLoc *geo.Location) (*payload.Message, error) {
@@ -183,69 +234,7 @@ func (t *TrekServer) getLatestData(deviceID string, mustHaveGPS bool, userLoc *g
 		return nil, err
 	}
 
-	m := &payload.Message{
-		ReceivedAt:      time.UnixMilli(received),
-		DeviceID:        deviceID,
-		Battery:         battery,
-		Temperature:     temp,
-		Luminosity:      lum,
-		MaxAcceleration: acc,
-	}
-	json.Unmarshal([]byte(gateways), &m.Gateways)
-
-	if userLoc != nil {
-		m.HasUserLocation = true
-		m.UserLocation = userLoc
-	}
-
-	if hasGPS {
-		if err := json.Unmarshal([]byte(gps), &m.GPS); err != nil {
-			glog.Warning(err)
-		} else {
-			m.HasGPS = true
-		}
-	}
-
-	if hasAPs {
-		if err := json.Unmarshal([]byte(aps), &m.AccessPoints); err != nil {
-			glog.Warning(err)
-		} else {
-			m.HasAccessPoints = true
-		}
-	}
-
-	if m.HasGPS && m.HasUserLocation {
-		m.GPS.DistanceFromUser = userLoc.Distance(&geo.Location{
-			Longitude: m.GPS.Longitude,
-			Latitude:  m.GPS.Latitude,
-		})
-	}
-
-	for i, rx := range m.Gateways {
-		if rx.Location.Latitude == 0 || rx.Location.Longitude == 0 {
-			continue
-		}
-
-		if m.HasGPS {
-			loc := &geo.Location{
-				Longitude: m.GPS.Longitude,
-				Latitude:  m.GPS.Latitude,
-			}
-			m.Gateways[i].Location.DistanceFromTracker = loc.Distance(&geo.Location{
-				Longitude: rx.Location.Longitude,
-				Latitude:  rx.Location.Latitude,
-			})
-		}
-
-		if m.HasUserLocation {
-			m.Gateways[i].Location.DistanceFromUser = userLoc.Distance(&geo.Location{
-				Longitude: rx.Location.Longitude,
-				Latitude:  rx.Location.Latitude,
-			})
-		}
-	}
-
-	return m, nil
+	return payload.CreateMessageFromRaw(deviceID, userLoc, received, gateways, hasGPS, hasAPs, battery, aps, temp, lum, acc, gps, raw), nil
 }
 
 func (t *TrekServer) indexHandler(c *gin.Context) {
@@ -260,7 +249,9 @@ func (t *TrekServer) indexHandler(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "index.html", gin.H{
-		"device": parsedQueryParameters.Device,
+		"device":    parsedQueryParameters.Device,
+		"startDate": time.Now().Add(-defaultLocationHistoryDuration).Format(locationHistoryFmt),
+		"endDate":   time.Now().Format(locationHistoryFmt),
 	})
 }
 
@@ -271,6 +262,8 @@ func (t *TrekServer) deviceHandler(c *gin.Context) {
 		Lat            float64 `form:"lat"`
 		Lon            float64 `form:"lon"`
 		ShowBrowserLoc bool    `form:"showBrowserLoc"`
+		StartDate      string  `form:"startDate"`
+		EndDate        string  `form:"endDate"`
 		Format         string  `form:"format"`
 	}
 
@@ -280,7 +273,16 @@ func (t *TrekServer) deviceHandler(c *gin.Context) {
 		return
 	}
 
-	stats, err := t.getDeviceStats(parsedQueryParameters.Device, statsDuration)
+	startDate, err := time.Parse(locationHistoryFmt, parsedQueryParameters.StartDate)
+	if err != nil {
+		startDate = time.Now().Add(-defaultLocationHistoryDuration)
+	}
+	endDate, err := time.Parse(locationHistoryFmt, parsedQueryParameters.EndDate)
+	if err != nil {
+		endDate = time.Now()
+	}
+
+	stats, err := t.getDeviceStats(parsedQueryParameters.Device, startDate, endDate)
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -299,6 +301,12 @@ func (t *TrekServer) deviceHandler(c *gin.Context) {
 		return
 	}
 
+	history, err := t.getHistoricalData(parsedQueryParameters.Device, startDate, endDate)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
 	switch strings.ToLower(parsedQueryParameters.Format) {
 	case "json":
 		c.JSON(http.StatusOK, gin.H{
@@ -311,6 +319,8 @@ func (t *TrekServer) deviceHandler(c *gin.Context) {
 	default:
 		c.HTML(http.StatusOK, "device.html", gin.H{
 			"device":         m.DeviceID,
+			"startDate":      startDate.Format(locationHistoryFmt),
+			"endDate":        endDate.Format(locationHistoryFmt),
 			"receivedAt":     m.ReceivedAt,
 			"receivedAgo":    time.Since(m.ReceivedAt),
 			"hasGPS":         m.HasGPS,
@@ -326,6 +336,7 @@ func (t *TrekServer) deviceHandler(c *gin.Context) {
 			"userLoc":        m.UserLocation,
 			"showBrowserLoc": parsedQueryParameters.ShowBrowserLoc,
 			"stats":          stats,
+			"history":        history,
 		})
 	}
 }
