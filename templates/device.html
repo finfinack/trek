@@ -3,14 +3,26 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title>Trek Locator</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
     <link href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css" rel="stylesheet" integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ==" crossorigin=""/>
+    <link href="/resources/rickshaw.css" rel="stylesheet"/>
+
+  	<style>
+      .rickshaw_graph .detail .x_label { display: none }
+      .rickshaw_graph .detail .item { line-height: 1.4; padding: 0.5em }
+      .detail_swatch { float: right; display: inline-block; width: 10px; height: 10px; margin: 0 4px 0 0 }
+      .rickshaw_graph .detail .date { color: #a0a0a0 }
+    </style>
   </head>
 
   <body>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js" integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ==" crossorigin=""></script>
+    <script src="http://d3js.org/d3.v2.js"></script>
+    <script src="/resources/rickshaw.js"></script>
 
     <script>
       const iconTracker = L.icon({
@@ -129,26 +141,221 @@
 
     <div class="row">
       <div class="col">
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item">
-            Luminosity: {{ .lum }} lux
-          </li>
-          <li class="list-group-item">
-            Temperature: {{ .temp }} degrees
-          </li>
-          <li class="list-group-item">
-            Max Acceleration: {{ .acc }} g
-          </li>
-          <li class="list-group-item">
-            Battery Level: 
-            <div class="progress">
-              <div class="progress-bar" role="progressbar" style="width: {{ .battLevel }}%;" aria-valuenow="{{ .battLevel }}" aria-valuemin="0" aria-valuemax="100">{{ .battLevel }}%</div>
-            </div>
-          </li>
-        </ul>
+        <div id="chart_container">
+          <div id="histChart"></div>
+        </div>
+        <script>
+          var histGraph = new Rickshaw.Graph({
+            element: document.getElementById('histChart'),
+            width: document.getElementById('histChart').clientWidth,
+            height: 150,
+            renderer: 'line',
+            series: [{
+              name: 'Temperature',
+              color: '#c05020',
+              data: [
+                {{ range $x, $y := .tempHistory }}
+                  { x: {{ $x }} , y: {{ $y }} },
+                {{ end }}
+              ]
+            },{
+              name: 'Luminosity',
+              color: '#30c020',
+              data: [
+                {{ range $x, $y := .lumHistory }}
+                  { x: {{ $x }} , y: {{ $y }} },
+                {{ end }}
+              ]
+            },{
+              name: 'Max Acceleration',
+              color: '#6060c0',
+              data: [
+                {{ range $x, $y := .accHistory }}
+                  { x: {{ $x }} , y: {{ $y }} },
+                {{ end }}
+              ]
+            }]
+          });
+
+          var x_axis = new Rickshaw.Graph.Axis.Time({
+            graph: histGraph,
+          });
+          var y_axis = new Rickshaw.Graph.Axis.Y({
+                  graph: histGraph,
+                  grid: true,
+                  orientation: 'left',
+                  tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+                  element: document.getElementById('y_axis'),
+          });
+
+          var hoverDetail = new Rickshaw.Graph.HoverDetail({
+            graph: histGraph,
+            formatter: function(series, x, y) {
+              var date = '<span class="date">' + new Date(x * 1000).toUTCString() + '</span>';
+              var swatch = '<span class="detail_swatch" style="background-color: ' + series.color + '"></span>';
+              var content = swatch + series.name + ": " + y + '<br>' + date;
+              return content;
+            }
+          });
+
+          histGraph.render();
+        </script>
       </div>
     </div>
 
+    <div class="row">
+      <div class="col">
+        Luminosity: {{ .lum }} lux
+
+        <div id="lumChart"></div>
+        <script>
+          var lumGraph = new Rickshaw.Graph({
+            element: document.getElementById('lumChart'),
+            width: document.getElementById('lumChart').clientWidth,
+            height: 150,
+            renderer: 'area',
+            series: [{
+              name: 'Luminosity',
+              color: 'steelblue',
+              data: [
+                {{ range $x, $y := .lumHistory }}
+                  { x: {{ $x }} , y: {{ $y }} },
+                {{ end }}
+              ]
+            }]
+          });
+
+          var x_axis = new Rickshaw.Graph.Axis.Time({
+            graph: lumGraph,
+          });
+          var y_axis = new Rickshaw.Graph.Axis.Y({
+                  graph: lumGraph,
+                  grid: true,
+                  orientation: 'left',
+                  tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+                  element: document.getElementById('y_axis'),
+          });
+
+          var hoverDetail = new Rickshaw.Graph.HoverDetail({
+            graph: lumGraph,
+            formatter: function(series, x, y) {
+          		var date = '<span class="date">' + new Date(x * 1000).toUTCString() + '</span>';
+          		var swatch = '<span class="detail_swatch" style="background-color: ' + series.color + '"></span>';
+          		var content = swatch + series.name + ": " + y + ' Lux<br>' + date;
+          		return content;
+          	}
+          });
+
+          lumGraph.render();
+        </script>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        Temperature: {{ .temp }} degrees
+
+        <div id="tempChart"></div>
+        <script>
+          var tempGraph = new Rickshaw.Graph({
+            element: document.getElementById('tempChart'),
+            width: document.getElementById('tempChart').clientWidth,
+            height: 150,
+            renderer: 'area',
+            series: [{
+              name: 'Temperature',
+              color: 'steelblue',
+              data: [
+                {{ range $x, $y := .tempHistory }}
+                  { x: {{ $x }} , y: {{ $y }} },
+                {{ end }}
+              ]
+            }]
+          });
+
+          var x_axis = new Rickshaw.Graph.Axis.Time({
+            graph: tempGraph,
+          });
+          var y_axis = new Rickshaw.Graph.Axis.Y({
+                  graph: tempGraph,
+                  grid: true,
+                  orientation: 'left',
+                  tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+                  element: document.getElementById('y_axis'),
+          });
+
+          var hoverDetail = new Rickshaw.Graph.HoverDetail({
+            graph: tempGraph,
+            formatter: function(series, x, y) {
+          		var date = '<span class="date">' + new Date(x * 1000).toUTCString() + '</span>';
+          		var swatch = '<span class="detail_swatch" style="background-color: ' + series.color + '"></span>';
+          		var content = swatch + series.name + ": " + y + ' Celcius<br>' + date;
+          		return content;
+          	}
+          });
+
+          tempGraph.render();
+        </script>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        Max Acceleration: {{ .acc }} g
+
+        <div id="accChart"></div>
+        <script>
+          var accGraph = new Rickshaw.Graph({
+            element: document.getElementById('accChart'),
+            width: document.getElementById('accChart').clientWidth,
+            height: 150,
+            renderer: 'area',
+            series: [{
+              name: 'Max Acceleration',
+              color: 'steelblue',
+              data: [
+                {{ range $x, $y := .accHistory }}
+                  { x: {{ $x }} , y: {{ $y }} },
+                {{ end }}
+              ]
+            }]
+          });
+
+          var x_axis = new Rickshaw.Graph.Axis.Time({
+            graph: accGraph,
+          });
+          var y_axis = new Rickshaw.Graph.Axis.Y({
+                  graph: accGraph,
+                  grid: true,
+                  orientation: 'left',
+                  tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+                  element: document.getElementById('y_axis'),
+          });
+
+          var hoverDetail = new Rickshaw.Graph.HoverDetail({
+            graph: accGraph,
+            formatter: function(series, x, y) {
+          		var date = '<span class="date">' + new Date(x * 1000).toUTCString() + '</span>';
+          		var swatch = '<span class="detail_swatch" style="background-color: ' + series.color + '"></span>';
+          		var content = swatch + series.name + ": " + y + ' g<br>' + date;
+          		return content;
+          	}
+          });
+
+          accGraph.render();
+        </script>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        Battery Level: 
+        <div class="progress">
+          <div class="progress-bar" role="progressbar" style="width: {{ .battLevel }}%;" aria-valuenow="{{ .battLevel }}" aria-valuemin="0" aria-valuemax="100">{{ .battLevel }}%</div>
+        </div>
+      </div>
+    </div>
+    
     {{ if .hasAP }}
       <div class="row">
         <div class="col">

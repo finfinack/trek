@@ -10,27 +10,27 @@ import (
 
 type Message struct {
 	// Metadata
-	Topic      string        `json:"topic"`
-	ReceivedAt time.Time     `json:"received_at"`
-	DeviceID   string        `json:"device_id"`
-	Gateways   []*RXMetadata `json:"gateways"`
+	Topic      string       `json:"topic"`
+	ReceivedAt time.Time    `json:"received_at"`
+	DeviceID   string       `json:"device_id"`
+	Gateways   []RXMetadata `json:"gateways"`
 
 	// Sensors
-	HasGPS          bool           `json:"has_gps"`
-	HasAccessPoints bool           `json:"has_accesspoints"`
-	Battery         int            `json:"battery_level"`
-	AccessPoints    []*AccessPoint `json:"accesspoints"`
-	Temperature     float32        `json:"temperature"`
-	Luminosity      float32        `json:"luminosity"`
-	MaxAcceleration float32        `json:"max_acceleration"`
-	GPS             *geo.Location  `json:"gps"`
+	HasGPS          bool          `json:"has_gps"`
+	HasAccessPoints bool          `json:"has_accesspoints"`
+	Battery         int           `json:"battery_level"`
+	AccessPoints    []AccessPoint `json:"accesspoints"`
+	Temperature     float32       `json:"temperature"`
+	Luminosity      float32       `json:"luminosity"`
+	MaxAcceleration float32       `json:"max_acceleration"`
+	GPS             geo.Location  `json:"gps"`
 
 	// Data
 	RAWMessage string `json:"raw_message"`
 
 	// Downstream data (i.e. not in DB)
-	HasUserLocation bool          `json:"has_user_location"`
-	UserLocation    *geo.Location `json:"user_location"`
+	HasUserLocation bool         `json:"has_user_location"`
+	UserLocation    geo.Location `json:"user_location"`
 }
 
 type Stats struct {
@@ -55,7 +55,7 @@ func CreateMessageFromRaw(deviceID string, userLoc *geo.Location, received int64
 
 	if userLoc != nil {
 		m.HasUserLocation = true
-		m.UserLocation = userLoc
+		m.UserLocation = *userLoc
 	}
 
 	if hasGPS {

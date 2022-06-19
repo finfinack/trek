@@ -306,6 +306,22 @@ func (t *TrekServer) deviceHandler(c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
+	tempHistory := map[int64]float32{}
+	for _, h := range history {
+		tempHistory[h.ReceivedAt.Unix()] = h.Temperature
+	}
+	lumHistory := map[int64]float32{}
+	for _, h := range history {
+		lumHistory[h.ReceivedAt.Unix()] = h.Luminosity
+	}
+	accHistory := map[int64]float32{}
+	for _, h := range history {
+		accHistory[h.ReceivedAt.Unix()] = h.MaxAcceleration
+	}
+	battHistory := map[int64]int{}
+	for _, h := range history {
+		battHistory[h.ReceivedAt.Unix()] = battLevel(h.Battery)
+	}
 
 	switch strings.ToLower(parsedQueryParameters.Format) {
 	case "json":
@@ -326,9 +342,13 @@ func (t *TrekServer) deviceHandler(c *gin.Context) {
 			"hasGPS":         m.HasGPS,
 			"gps":            m.GPS,
 			"lum":            m.Luminosity,
+			"lumHistory":     lumHistory,
 			"temp":           m.Temperature,
+			"tempHistory":    tempHistory,
 			"acc":            m.MaxAcceleration,
+			"accHistory":     accHistory,
 			"battLevel":      battLevel(m.Battery),
+			"battHistory":    battHistory,
 			"gateways":       m.Gateways,
 			"hasAP":          m.HasAccessPoints,
 			"aps":            m.AccessPoints,
@@ -336,7 +356,6 @@ func (t *TrekServer) deviceHandler(c *gin.Context) {
 			"userLoc":        m.UserLocation,
 			"showBrowserLoc": parsedQueryParameters.ShowBrowserLoc,
 			"stats":          stats,
-			"history":        history,
 		})
 	}
 }
@@ -453,7 +472,7 @@ func (i *Trek) Publish(topic string, msg string) error {
 		return err
 	}
 	payload := &payload.DownPush{
-		Downlinks: []*payload.Downlink{
+		Downlinks: []payload.Downlink{
 			{
 				FPort:      1,
 				FRMPayload: encoded,
@@ -582,6 +601,10 @@ func formatTime(t time.Time) string {
 	return t.Format(time.RFC3339)
 }
 
+func formatTimeToUnix(t time.Time) int64 {
+	return t.Unix()
+}
+
 func formatDistance(d float64) string {
 	switch {
 	case d > 10000:
@@ -638,10 +661,11 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	router.SetFuncMap(template.FuncMap{
-		"battLevel":      battLevel,
-		"formatDuration": formatDuration,
-		"formatTime":     formatTime,
-		"formatDistance": formatDistance,
+		"battLevel":        battLevel,
+		"formatDuration":   formatDuration,
+		"formatTime":       formatTime,
+		"formatTimeToUnix": formatTimeToUnix,
+		"formatDistance":   formatDistance,
 	})
 	router.LoadHTMLGlob("templates/*")
 	trekkerServer := TrekServer{

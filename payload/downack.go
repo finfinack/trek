@@ -11,7 +11,7 @@ type DownlinkAck struct {
 }
 
 type DownAck struct {
-	EndDeviceIDs   *DeviceIDs   `json:"end_device_ids"`
-	CorrelationIDs []string     `json:"correlation_ids"`
-	DownlinkAck    *DownlinkAck `json:"downlink_ack"`
+	EndDeviceIDs   DeviceIDs   `json:"end_device_ids"`
+	CorrelationIDs []string    `json:"correlation_ids"`
+	DownlinkAck    DownlinkAck `json:"downlink_ack"`
 }
